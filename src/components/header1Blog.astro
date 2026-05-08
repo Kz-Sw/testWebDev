@@ -1,0 +1,87 @@
+---
+import Menu from './menu1Blog.astro';
+import Navigation from './navigation.astro';
+import homeIcon from "/icons/home.svg?raw";
+
+interface Props {
+  heroTitle?: string;
+  author?: string;
+  enAuthor?: string;
+}
+
+const { heroTitle, author, enAuthor } = Astro.props;
+---
+<header>
+
+    <div class="header-center"></div>
+        <div class="header-inline">
+            {heroTitle && <h1 class="header-title">{heroTitle}</h1>}
+            {author && <p class="header-author">{author}</p>}
+
+        </div>
+    </div>    
+
+    <a href="/" class="home-icon" aria-label="Home">
+    <Fragment set:html={homeIcon} />
+    </a>
+</header>
+
+<style>
+    header {
+        height: 40px; /* fixed height */
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden; /* keeps content inside */
+        background:#570e1c 
+    }
+
+    .header-inline {
+        display: flex;
+        align-items: center;
+        gap: 1rem; /* space between items */
+    }    
+
+    
+    .header-title {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: #fff;
+    }
+    
+    .header-author {
+        font-size: 1rem;
+        margin: 0.25rem 0;
+        color: #fff;
+    }
+    
+    .home-icon {
+        position: absolute;
+        right: 2rem;
+        transition: transform 0.3s ease;
+        color: #dcdcdc;
+        text-decoration: none;
+        background: transparent; /* ensure no background */
+        border: none; /* remove any border */
+        padding: 0; /* remove padding */
+    }
+    
+    .home-icon:hover {
+        color: #fffab2;
+        transform: scale(1.5); 
+        opacity: 0.7;
+    }
+
+    .home-icon img {
+        width: 60px;
+        height: 60px;
+        display: block;
+        background: transparent; /* ensure image has no bg */
+    }
+
+    .home-icon path {
+        fill: red;
+        stroke: red;
+    }
+</style>

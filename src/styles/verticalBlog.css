@@ -1,0 +1,342 @@
+/* ========================================
+   VERTICAL Blog LAYOUT TEMPLATE
+   ======================================== */
+:root {
+  --header-height: 40px;
+}
+
+/* Reset */
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: #111;
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+}
+
+/* Horizontal scroll container */
+.scroll-wrapper {
+  visibility: hidden;
+  height: calc(100vh - var(--header-height)); /* subtract header height */
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: row-reverse; /* right to left for vertical-rl */
+  padding-inline-start: 80px; 
+}
+
+
+/* Hero section - book cover ratio */
+.hero-section {
+  height: 100vh;
+  width: calc(100vh * 2 / 3);
+  flex-shrink: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden; 
+}
+
+.hero-section img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Hero Image placeholders */
+img {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+}
+
+img:not([src]), img[src=""] {
+  opacity: 0.3;
+}
+
+/* Hero title overlay */
+.hero-title {
+  position: absolute;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 2.5em;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0,100,0,0.8);
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+  top: 5%;
+  right: 7%;
+  transform: none;
+  z-index: 10;
+  max-height: 80vh; 
+  white-space: nowrap; 
+  padding: 1em 0.3em; /* block-padding (top/bottom in vertical), inline-padding (left/right) */
+                      /* OR use individual padding */
+                      /*padding-block: 2em;  extends top and bottom */
+                      /* padding-inline: 1em; extends left and right */
+}
+
+/* English title overlay */
+.en-title {
+  position: absolute;
+  text-align: center;
+  font-size: 2.5em;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0,100,0,0.8);
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 0.2em 2.0em;
+  line-height: 0.7;
+}
+
+.author {
+  font-weight: 100;
+  font-size: 0.65em;
+}
+
+.en-author {
+  font-weight: 100;
+  font-size: 0.65em;
+}
+
+/* Spacer between hero and content */
+.content-offset {
+width: 5vw;
+flex-shrink: 0;
+background:
+  /* LEFT half */
+  linear-gradient(
+    to bottom,
+    #267028 0%,
+    #143420 100%
+  ),
+  /* RIGHT half */
+  linear-gradient(
+    to bottom,
+    #69ca28 0%,
+    #3d7511 100%
+  );
+
+background-size:
+  30% 100%,
+  70% 100%;
+
+background-position:
+  left top,
+  right top;
+
+background-repeat: no-repeat;
+pointer-events: none;
+}
+
+.content-offset2 {
+width: 5vw;
+flex-shrink: 0;
+background:transparent
+}
+
+/* Content section with grid */
+.content-section {
+  display: grid;
+  grid-template-rows: 3.1fr 0.9fr;
+  height: calc(100vh - var(--header-height)); 
+  inline-size: fit-content;
+}
+
+/* Shared vertical text */
+.vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  line-height: 1.9;
+  padding: 24px;
+  overflow: visible;
+}
+
+/* Top (main text) */
+.top {
+  max-inline-size: 100%;
+  white-space: normal;
+  background: #1e1e1e;
+  color: #f2f2f2;
+  outline: 1px solid rgba(255,255,255,0.15);
+}
+
+/* Bottom (bibliography / notes) */
+.bottom {
+  background: #7a1f1f;
+  color: #fff;
+  font-size: 0.9em;
+  outline: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ###################  Text styles #########################*/
+.chapter{
+  font-size: 1.8em;
+  font-weight: 700;
+  margin-block-start: 1em;
+  margin-inline-start: 2em;
+}
+
+.bold {
+  font-weight: 700;
+}
+
+.small {
+  font-size: 0.75em;
+  opacity: 0.85;
+}
+
+p {
+  margin-block-end: 1.5em;
+}
+
+.indent {
+  text-indent: 1em;
+}
+
+.note {
+  font-size: 0.8em;
+  vertical-align: super;
+}
+
+
+/* ###################  Half-split layout  ################### */
+.half-split {
+  display: grid;
+  grid-template-columns: 65% 1fr;
+  column-gap: 1em;
+  block-size: 100%;
+  margin-block: 2em;
+  break-inside: avoid;
+}
+
+.half-split .half-top {
+  display: flex;
+  align-items: start;
+  overflow: hidden;
+}
+
+.half-split .half-top img {
+  block-size: auto;
+  inline-size: 100%;
+  object-fit: contain;
+}
+
+.half-split .half-bottom {
+  overflow: visible;
+  writing-mode: vertical-rl;
+}
+
+.half-split .half-top figure {
+  margin: 0;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.half-split .half-top figure img {
+  display: block;
+  max-block-size: 80%;
+  max-inline-size: 100%;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.half-split .half-top figcaption {
+  position: absolute;
+  inset-block-end: 1em;
+  inset-inline-start: center;
+  inset-inline-end: 0;
+  writing-mode: horizontal-tb !important;
+  font-size: 0.85em;
+  color: #999;
+  text-align: center;
+  padding: 0.5em;
+  /* background: rgba(0, 0, 0, 0.7); */
+}
+
+
+/* ##########################  Generic media block ############################# */
+.media-block {
+  --media-block-size: 50%;          /* default */
+  --gap: 1.2em;
+
+  display: grid;
+  grid-template-columns: var(--media-block-size) auto;
+
+  writing-mode: vertical-rl rgba(0,50,150,0.8);
+  align-items: stretch;
+
+  margin-block: 2em;
+}
+
+/* Media itself */
+.media-block .media {
+  block-size: 100%;
+  inline-size: 100%;
+  object-fit: contain;
+}
+
+/* Caption or explanation */
+.media-block .caption {
+  writing-mode: horizontal-tb;
+  font-size: 0.9em;
+  line-height: 1.6;
+  color: #aaa;
+}
+
+/* YouTube iframe normalization */
+.media-block iframe {
+  block-size: 100%;
+  inline-size: 100%;
+  object-fit: contain;
+  aspect-ratio: 16 / 9;
+  border: none;
+}
+
+/* Inserted image inside text flow */
+.inline-image {
+  inline-size: 16em;
+  margin-block: 1em;
+  vertical-align: middle;
+}
+
+.inline-image img {
+  inline-size: 100%;
+  display: block;
+}
+
+.icon-center {
+  inline-size: fit-content; /* Gap to the next section */
+  margin-inline-start: 4em;
+  margin-block: 4em;     /* Gap from the top */
+}
+
+.icon-center img {
+  width: 2em;
+  height: 2em;
+}
+
+.inline-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.02em;
+}
+
+/* ##########################  Audio Player ############################# */
+.post-audio {
+  margin-inline-start: 2rem;
+  margin-inline-end: 80px;
+  background-color: #787957;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+  padding-block: 1.5rem; /* Top/bottom padding in vertical mode */
+  padding-inline: 2rem; /* Left/right padding */
+}

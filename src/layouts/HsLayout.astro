@@ -1,0 +1,195 @@
+---
+import MainHead from '../components/MainHead.astro';
+
+export interface Props {
+  title: string;
+  mainTitle?: string;
+  heroMedia?: {
+    type: 'image' | 'video';
+    url: string;
+    alt?: string;
+    poster?: string;
+    position?: string;
+  };
+}
+
+const {
+  title,
+  mainTitle = "さぶろう座",
+  heroMedia = {
+    type: 'image',
+    url: "/images/tops/temp_rose.jpg",
+    alt: "rose",
+    position: "center center"
+  }
+} = Astro.props;
+---
+
+<html lang="ja">
+  <head>
+    <MainHead title={title} description="さぶろう座" />
+  </head>
+
+  <body>
+    <div class="scroll-wrapper">
+
+<!-- HERO (RIGHT SIDE) -->
+      <div class="hero-section">
+        {heroMedia.type === "image" && (
+          <img 
+            src={heroMedia.url} 
+            alt={heroMedia.alt ?? mainTitle} 
+            style={`object-position: ${heroMedia.position};`}
+          />
+        )}
+        
+        {heroMedia.type === "video" && (
+          <video
+            src={heroMedia.url}
+            poster={heroMedia.poster}
+            autoplay
+            muted
+            loop
+            playsinline
+            style={`object-position: ${heroMedia.position};`}
+          ></video>
+        )}
+        
+        <div class="hero-overlay">
+          {mainTitle}
+        </div>
+      </div>
+
+      <div class="descrip">
+        <div class="descrip-text">
+          ばらよ、おお、きよらかな<ruby>矛盾<rt>むじゅん</rt></ruby>よ、<br/>
+          あなたの<ruby>瞼<rt>まぶた</rt></ruby>のしたで、だれの眠りでもないという<br/>
+          よろこびよ。<br/>
+          <br/>
+        </div>  
+        <div class="descrip-credit">
+          リルケ 墓碑銘<br/>
+         
+        </div>
+      </div>
+
+      <!-- POSTS -->
+      <main class="blog-post-wrapper">
+        <slot />
+      </main>
+
+    </div>
+  </body>
+</html>
+
+<style>
+/* RESET */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: white;
+  font-family: 'Noto Serif JP', serif;
+}
+
+/* MAIN HORIZONTAL ENGINE */
+.scroll-wrapper {
+  display: flex;
+  flex-direction: row-reverse;
+  height: 100vh;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* HERO */
+.hero-section {
+  flex: 0 0 80vh;
+  height: 100vh;
+  position: relative;
+  background: black;
+}
+
+.hero-section img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* VERTICAL OVERLAY TEXT */
+.hero-overlay {
+  position: absolute;
+  top: 30%;
+  right: 10%;
+  transform: translateY(-50%);
+
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+
+  font-size: 2.5rem;
+  font-weight: bold;
+
+  background: rgba(0, 100, 0, 0.7);
+  padding: 1rem 0.5rem;
+}
+
+.descrip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin-top: 0rem;
+  flex: 0 0 80vh;
+  flex-direction: row-reverse;
+  height: 100vh;
+  position: relative;
+  background-color: black;
+}
+
+.descrip-text {
+  margin-top: 30%;
+  margin-left: 20%;
+  writing-mode: vertical-rl;
+  align-items: center;
+  font-size: 1.5rem;
+  text-shadow: 0 0 16px rgba(234, 255, 0, 0.4);
+  filter: blur(0.5px);
+  background: linear-gradient(
+    to bottom left,
+    rgba(8, 62, 255, 0.9),
+    rgba(164, 59, 255, 0.9),
+    rgba(144, 0, 0, 0.6)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.descrip-credit  {
+  writing-mode: vertical-rl;
+  font-size: 1.5rem;
+  margin-top: 80%;
+  text-shadow: 0 0 16px rgba(234, 255, 0, 0.4);
+  filter: blur(0.5px);
+  background: linear-gradient(
+    to bottom left,
+    rgba(8, 62, 255, 0.9),
+    rgba(164, 59, 255, 0.9),
+    rgba(144, 0, 0, 0.6)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+/* POSTS STRIP */
+.blog-post-wrapper {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 0rem;
+  padding: 0rem;
+  align-items: stretch;
+}
+.post-card {
+  writing-mode: horizontal-tb; /* Forces it to stay horizontal */
+}
+</style>

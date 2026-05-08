@@ -1,0 +1,49 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import { categoryConfig, type CategoryKey } from "../scripts/categories";
+import PostCard from "../components/PostCard.astro";
+
+import ZaLayout from "../layouts/ZaLayout.astro";
+import EsLayout from "../layouts/EsLayout.astro";
+import HsLayout from "../layouts/HsLayout.astro";
+import BkLayout from "../layouts/BkLayout.astro";
+
+export async function getStaticPaths() {
+  const allPosts: CollectionEntry<"posts">[] = await getCollection("posts");
+  const categories = Object.keys(categoryConfig) as CategoryKey[];
+
+  return categories.map((category) => ({
+    params: { category },
+    props: {
+      posts: allPosts
+        .filter(
+          (post): post is CollectionEntry<"posts"> =>
+            (import.meta.env.DEV || !post.data.draft) &&
+            post.data.category === category
+        )
+        .sort((a, b) => {
+          const dateA = a.data.pubDate;
+          const dateB = b.data.pubDate;
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          return dateA.getTime() - dateB.getTime();
+        }),
+    },
+  }));
+}
+
+interface Props {
+  posts: CollectionEntry<"posts">[];
+}
+
+const { category } = Astro.params as { category: CategoryKey };
+const { posts } = Astro.props as Props;
+const config = categoryConfig[category];
+const title = config?.title ?? category;
+---
+
+{category === "za" && <ZaLayout {title}>{posts.map((post) => <PostCard post={post} />)}</ZaLayout>}
+{category === "es" && <EsLayout {title}>{posts.map((post) => <PostCard post={post} />)}</EsLayout>}
+{category === "hs" && <HsLayout {title}>{posts.map((post) => <PostCard post={post} />)}</HsLayout>}
+{category === "bk" && <BkLayout {title}>{posts.map((post) => <PostCard post={post} />)}</BkLayout>}

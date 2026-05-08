@@ -1,0 +1,160 @@
+---
+import { toKanjiDigits, slugify } from "../scripts/utils";
+import { categoryConfig } from "../scripts/categories";
+
+const { post } = Astro.props;
+const { 
+  heroTitle, 
+  author, 
+  number,        // Using the new universal 'number' 
+  category, 
+  heroImage, 
+  tags, 
+  enTitle 
+} = post.data;
+
+const imageUrl =
+  typeof heroImage === "string"
+    ? heroImage
+    : heroImage?.url;
+
+const imageAlt =
+  typeof heroImage === "string"
+    ? heroTitle
+    : heroImage?.alt || heroTitle;
+
+const imagePosition =
+  typeof heroImage === "string"
+    ? "center center"
+    : heroImage?.position || "center center";
+
+// 1. Generate URL: /[category]/[000-slugified-en-title]
+// Logic matches [slug].astro to ensure links work [cite: 10]
+const fileName = post.file?.split('/').pop()?.replace('.mdx', '') || '';
+const slugBase = enTitle ? slugify(enTitle) : fileName;
+const paddedNum = number ? String(number).padStart(3, '0') : null;
+const actualSlug = paddedNum ? `${paddedNum}-${slugBase}` : slugBase;
+
+// Path is now directly under category (no /posts/ prefix) 
+const postUrl = `/${category}/${actualSlug}`;
+
+// 2. Generate Full Title using modular categoryConfig [cite: 13, 14]
+const config = categoryConfig[category];
+const kanjiNum = number ? toKanjiDigits(number) : "";
+const fullTitle = config 
+  ? `${config.prefix || "第"}${kanjiNum}${config.suffix}　${heroTitle}`
+  : heroTitle;
+---
+
+<article class="blog-card" data-tags={tags?.join(',')}>
+  <a href={postUrl} class="card-link">
+    <div class="card-image">
+      {heroImage && (
+        <img 
+          src={imageUrl}
+          alt={imageAlt}
+          style={`object-position: ${imagePosition};`}
+          loading="lazy"
+        />
+      )}
+      <div class="image-overlay"></div>
+
+      <div class="card-main-overlay"> 
+        <div class="card-title-section-overlay">
+          <h2 class="card-title vertical-text">{fullTitle}</h2>
+        </div>
+        
+        {author && (
+          <p class="card-author vertical-text">{author}</p>
+        )}
+      </div>
+    </div>
+  </a>
+</article>
+
+<style>
+/* Your existing styles remain identical */
+.blog-card {
+  background: black;
+  border-radius: 0px;
+  overflow: hidden;
+  margin: 0; 
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  height: 100%;
+  width: calc(100vh * 1 / 4);
+  flex: 0 0 auto;  
+  flex-shrink: 0; 
+  max-width: none;
+}
+
+/* Slight lift on hover */
+.blog-card:hover {
+  transform: translateY(-6px);
+}
+
+/* Image wrapper */
+.card-image {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Dark by default */
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  filter: brightness(0.45) saturate(0.8);
+  transition: filter 0.6s ease;
+}
+
+/* Restore on hover */
+.blog-card:hover img {
+  filter: brightness(1) saturate(1);
+}
+
+/* Optional subtle gradient for text readability */
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to left,
+    rgba(0,0,0,0.6),
+    rgba(0,0,0,0.2)
+  );
+  pointer-events: none;
+}
+
+/* Text overlay */
+.card-main-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem;
+  z-index: 2;
+}
+
+/* Vertical title */
+.card-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Vertical author */
+.card-author {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+</style>

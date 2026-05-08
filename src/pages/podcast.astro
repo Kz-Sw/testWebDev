@@ -1,0 +1,962 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import MainHead from '../components/MainHead.astro';
+import { slugify } from '../scripts/utils';
+import { categoryConfig } from '../scripts/categories';
+import { toKanjiDigits } from '../scripts/utils';
+
+interface AudioItem {
+  src: string;
+  image: string;
+  category: string;
+  number: string;
+  title: string;
+  enTitle: string;
+  postSlug: string;
+}
+
+interface CategoryGroup {
+  name: string;
+  items: AudioItem[];
+}
+
+// ── Podcast Hero image ─────────────────────────────────────
+const pageHeroImage = '/images/posts/za-1_hero.jpg';
+
+// ── Load posts ─────────────────────────────────────
+const allPosts = await getCollection('posts', ({ data }: CollectionEntry<'posts'>) => !data.draft);
+
+// ── Extract audio ──────────────────────────────────
+const audios: AudioItem[] = allPosts
+  .filter((post: CollectionEntry<'posts'>) => !!post.data.audio?.src)
+  .map((post: CollectionEntry<'posts'>) => {
+    const { category, number, heroTitle, enTitle, audio, heroMedia } = post.data;
+
+    const paddedNum = String(number ?? 0).padStart(3, '0');
+    const postSlug  = `${category ?? 'other'}/${paddedNum}-${slugify(enTitle ?? '')}`;
+
+    // Same pattern as gallery.astro: strip relative prefix, keep filename
+    const rawUrl = heroMedia?.url ?? '';
+    const image  = rawUrl.startsWith('/')
+      ? rawUrl
+      : rawUrl ? '/images/posts/' + rawUrl.split('/').pop() : '';
+
+    const config    = categoryConfig[(category ?? '').toLowerCase()];
+    const kanjiNum  = toKanjiDigits(Number(number ?? 0));
+    const fullTitle = config
+      ? `${config.prefix || '第'}${kanjiNum}${config.suffix}　${heroTitle}`
+      : heroTitle;
+
+    return {
+      src:      (audio?.src ?? '') as string,
+      image,
+      category: (category ?? 'OTHER').toUpperCase(),
+      number:   String(number ?? 0),
+      title:    fullTitle ?? '',
+      enTitle:  enTitle   ?? '',
+      postSlug,
+    };
+  });
+
+
+// ── Sort ───────────────────────────────────────────
+const CATEGORY_ORDER = ['ZA', 'ES'];
+
+function categoryRank(cat: string) {
+  const i = CATEGORY_ORDER.indexOf(cat);
+  return i !== -1 ? i : CATEGORY_ORDER.length;
+}
+
+audios.sort((a, b) =>
+  categoryRank(a.category) - categoryRank(b.category) ||
+  Number(a.number) - Number(b.number)
+);
+
+// ── Group ──────────────────────────────────────────
+const groups: CategoryGroup[] = [];
+for (const item of audios) {
+  const last = groups[groups.length - 1];
+  if (last && last.name === item.category) {
+    last.items.push(item);
+  } else {
+    groups.push({ name: item.category, items: [item] });
+  }
+}
+---
+
+<html lang="ja">
+<head>
+  <MainHead title="ポッドキャスト" description="音声一覧" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: #e8e0d0;
+      font-family: 'Noto Serif JP', serif;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /* ── Layout ───────────────────────── */
+    .podcast-layout {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── LEFT PLAYER — floating card ─── */
+    /* Floats over content; 40px header + 8px gap from left edge */
+    .player-fixed {
+      position: fixed;
+      left: 48px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 50;
+
+      width: 160px;
+      height: min(88vh, 880px);
+
+      display: grid;
+      grid-template-columns: 1fr auto auto; 
+      gap: 0.8rem;
+      align-items: center;
+
+      background: rgba(8,7,5,0.93);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.72),
+        0 2px 8px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      backdrop-filter: blur(6px);
+
+      padding: 1.2rem 0.7rem;
+      writing-mode: vertical-rl;
+      font-family: 'Noto Serif JP', serif;
+    }
+
+    /* Spacer so scroll content doesn't hide behind player */
+    .scroll-offset {
+      flex: 0 0 calc(48px + 160px + 20px);
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* ── Title column ────────────────── */
+    .player-title-col {
+      writing-mode: vertical-rl;
+      display: flex;
+      align-items: center;
+      justify-content: top;   /* centers text along the vertical axis */
+      height: 100%;
+      margin-left: 0.2rem;
+    }
+
+    .player-title {
+      writing-mode: vertical-rl;
+      font-size: 1em;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: rgba(232,224,208,0.9);
+      white-space: wrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-height: none;       /* let it use all the space the grid gives it */
+      min-height: 0;          /* required for grid overflow to work correctly */
+    }
+
+    .player-title.empty {
+      opacity: 0.25;
+      font-weight: 400;
+      font-size: 0.8em;
+    }
+
+    /* ── Seek + timer column ─────────── */
+    .player-seek-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+
+    /* Bamboo-scroll seek (ported from tate-audio.js) */
+    .player-seek {
+      -webkit-appearance: none;
+      appearance: none;
+      writing-mode: vertical-lr;
+      direction: ltr;
+      width: 40px;
+      height: 260px;
+      background: transparent;
+      cursor: pointer;
+      outline: none;
+      border: none;
+      padding: 0;
+    }
+
+    .player-seek::-webkit-slider-runnable-track {
+      width: 40px;
+      border-radius: 4px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='300'%3E%3Crect x='17' y='0' width='6' height='300' rx='3' fill='%23c8a96e' opacity='0.4'/%3E%3Crect x='15' y='60' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3Crect x='15' y='120' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3Crect x='15' y='180' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3Crect x='15' y='240' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3C/svg%3E");
+      background-size: 40px 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .player-seek::-moz-range-track {
+      width: 40px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='300'%3E%3Crect x='17' y='0' width='6' height='300' rx='3' fill='%23c8a96e' opacity='0.4'/%3E%3Crect x='15' y='60' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3Crect x='15' y='120' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3Crect x='15' y='180' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3Crect x='15' y='240' width='10' height='3' rx='1.5' fill='%238f6316' opacity='0.6'/%3E%3C/svg%3E");
+      background-size: 40px 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      border: none;
+    }
+
+    /* Gold-seal thumb */
+    .player-seek::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 40px;
+      height: 40px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%238f6316'/%3E%3Ccircle cx='20' cy='20' r='13' fill='none' stroke='%23f4ed27' stroke-width='1.5'/%3E%3Ccircle cx='20' cy='20' r='4' fill='%23f4ed27'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-color: transparent;
+      border: none;
+      cursor: grab;
+    }
+
+    .player-seek::-webkit-slider-thumb:active { cursor: grabbing; }
+
+    .player-seek::-moz-range-thumb {
+      width: 40px;
+      height: 40px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%238f6316'/%3E%3Ccircle cx='20' cy='20' r='13' fill='none' stroke='%23f4ed27' stroke-width='1.5'/%3E%3Ccircle cx='20' cy='20' r='4' fill='%23f4ed27'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-color: transparent;
+      border: none;
+      border-radius: 50%;
+      cursor: grab;
+    }
+
+    /* Kanji timer */
+    .player-timer {
+      writing-mode: vertical-rl;
+      font-size: 0.85em;
+      letter-spacing: 0.05em;
+      opacity: 0.9;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* Volume */
+    .player-volume-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .vol-label {
+      writing-mode: vertical-rl;
+      font-size: 0.7em;
+      opacity: 0.6;
+      user-select: none;
+    }
+
+    .player-volume {
+      -webkit-appearance: none;
+      appearance: none;
+      writing-mode: vertical-lr;
+      direction: rtl;
+      width: 8px;
+      height: 80px;
+      cursor: pointer;
+      background: transparent;
+      outline: none;
+    }
+
+    .player-volume::-webkit-slider-runnable-track {
+      background: rgba(200,200,200,0.25);
+      border-radius: 8px;
+    }
+
+    .player-volume::-moz-range-track {
+      background: rgba(200,200,200,0.25);
+      border-radius: 8px;
+      border: none;
+    }
+
+    .player-volume::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: rgba(143,99,22,1);
+      border-radius: 50%;
+      margin-left: -3px;
+    }
+
+    .player-volume::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: rgba(143,99,22,1);
+      border-radius: 50%;
+      border: none;
+    }
+
+    /* ── Buttons column ──────────────── */
+    .player-btns {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-block-start: 1rem; /* physical top in vertical writing mode */
+    }
+
+    .p-btn {
+      writing-mode: horizontal-tb; /* keep kanji upright */
+      width: 2.6em;
+      height: 2.6em;
+      font-size: 1.1em;
+      font-family: 'Noto Serif JP', serif;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      transition: background 0.15s, color 0.15s, transform 0.1s, box-shadow 0.1s;
+    }
+
+    .p-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Play/stop button */
+    #btnPlay {
+      background: linear-gradient(180deg, rgba(60,50,40,1), rgba(30,20,10,1));
+      color: rgba(240,220,160,1);
+    }
+
+    #btnPlay.playing {
+      background: linear-gradient(180deg, rgba(240,220,120,1), rgba(200,160,60,1));
+      color: #000;
+      box-shadow: 0 0 12px rgba(244,237,39,0.6), 0 0 24px rgba(244,237,39,0.3);
+    }
+
+    /* Rewind button */
+    #btnRewind {
+      background: linear-gradient(180deg, rgba(143,99,22,1), rgba(105,68,4,1));
+      color: rgba(255,255,255,1);
+    }
+
+    #btnRewind:hover {
+      background: rgba(244,237,39,1);
+      color: rgba(6,1,46,1);
+    }
+
+    /* Speed button */
+    #btnSpeed {
+      background: linear-gradient(180deg, rgba(40,40,60,1), rgba(20,20,40,1));
+      color: rgba(180,180,240,0.9);
+      writing-mode: horizontal-tb;
+      width: 4em;
+      padding: 0 0.5em;
+      font-size: 0.55em;
+      white-space: nowrap;
+
+    }
+
+    #btnSpeed:hover {
+      background: rgba(244,237,39,1);
+      color: rgba(6,1,46,1);
+    }
+
+    /* hidden real audio */
+    #globalAudio { display: none; }
+
+    /* ── RIGHT SCROLL ─────────────────── */
+    .scroll-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: row-reverse;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    /* ── Category Divider ───────────────── */
+    .category-divider {
+      flex: 0 0 48px;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(to bottom, #050505, #0a1a0a, #050505);
+      border-right: 1px solid rgba(60,180,60,0.12);
+      border-left:  1px solid rgba(60,180,60,0.06);
+      position: relative;
+
+
+    }
+
+    .category-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: calc(50% - 0.5px);
+      width: 1px;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(60,180,60,0.15) 30%,
+        rgba(60,180,60,0.15) 70%,
+        transparent
+      );
+    }
+
+    .category-label {
+      writing-mode: vertical-rl;
+      font-size: .6rem;
+      letter-spacing: 0.5em;
+      color: rgba(120,220,120,0.5);
+    }
+
+    /* ── Card ─────────────────────────── */
+    .audio-card {
+      flex: 0 0 42vh;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 2rem;
+      cursor: pointer;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid rgba(244, 237, 39, 0.06);
+      box-shadow: inset 0 0 0 2px rgba(217, 255, 80, 0.06);
+      opacity: 0.4;
+      transition: opacity 0.3s ease;
+    }
+
+    /* dark scrim so text stays readable over images */
+    .audio-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to left,
+        rgba(0,0,0,0.55) 0%,
+        rgba(0,0,0,0.15) 60%,
+        transparent 100%
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .audio-card:hover {
+      opacity: 0.75;
+      border: 2px solid rgba(244, 237, 39, 0.06);
+      box-shadow: inset 0 0 0 3px rgba(29, 83, 153, 0.302);
+    }
+
+    .audio-card.active {
+      opacity: 1;
+      border: 2px solid rgba(177, 41, 251, 0.79);
+      border-image: linear-gradient(to bottom, transparent, rgba(157, 65, 255, 0.9), transparent) 1;
+      box-shadow: inset 0 0 40px rgba(62, 120, 255, 0.828);
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Now-playing badge */
+    .audio-card.active::after {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      writing-mode: vertical-rl;
+      font-size: 1.5rem;
+      pointer-events: none;
+      border: 1px solid rgba(244,237,39,0.35);
+      border-radius: 6px;
+      box-shadow: 0 0 8px rgba(244,237,39,0.15);
+      padding-top: 8px;
+      padding-bottom: 8px;
+      background-size: 100% 200%;
+      animation: playingPulse 4s ease-in-out infinite;
+      cursor: default;
+      user-select: none;
+    }
+
+    /* playing state */
+    .audio-card.active:not(.paused)::after {
+      content: "再生中";
+      background: linear-gradient(
+        180deg,
+        rgba(136,255,57,0.9) 20%,
+        rgba(255,11,251,0.9) 40%,
+        rgba(136,255,57,0.9) 80%
+      );
+      background-size: 100% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+
+      animation: playingPulse 4s ease-in-out infinite;
+      }
+
+
+
+    /* paused state */
+    .audio-card.active.paused::after {
+      content: "停止中";
+      background: linear-gradient(
+        180deg,
+        rgba(180,180,180,0.9) 20%,
+        rgba(120,120,120,0.9) 80%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: none; /* optional: stop pulse when paused */
+      cursor: pointer;
+      user-select: none;
+    }
+
+        @keyframes playingPulse {
+      0%   { filter: hue-rotate(0deg); }
+      50%  { filter: hue-rotate(180deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+
+    .card-highlight-line {
+      position: absolute;
+      right: 0.45rem;
+      width: 4px;
+      background: linear-gradient(to bottom, transparent, rgba(244,237,39,.85) 30%, rgba(244,237,39,.85) 70%, transparent);
+
+       /* border around the thin line */
+      border: 1px solid rgba(255, 245, 180, 0.9);
+      border-radius: 2px;
+      opacity: 0;
+      transition: opacity .25s ease, box-shadow .25s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .audio-card:hover .card-highlight-line {
+      opacity: .7;
+      border-color: rgba(255, 250, 210, 1);
+      box-shadow: 0 0 10px rgba(244,237,39,.35);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .audio-card.active .card-highlight-line {
+      opacity: 1;
+      box-shadow: 0 0 14px rgba(244,237,39,.6);
+    }
+
+    /* ── Play button overlay ───────────── */
+    .card-play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(232,224,208,0.5);
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .card-play-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: rgba(232,224,208,0.9);
+      /* nudge triangle optically */
+      margin-left: 2px;
+    }
+
+    /* pause icon shown when this card is active */
+    .card-play-btn .icon-pause { display: none; }
+    .card-play-btn .icon-play  { display: block; }
+
+    .audio-card.active .card-play-btn .icon-play  { display: none; }
+    .audio-card.active .card-play-btn .icon-pause { display: block; }
+
+    .audio-card:hover .card-play-btn,
+    .audio-card.active .card-play-btn {
+      opacity: 1;
+    }
+
+    /* ── Card meta ────────────────────── */
+    .card-meta {
+      writing-mode: vertical-rl;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.6rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-cat {
+      font-size: 0.6rem;
+      letter-spacing: 0.5em;
+      color: rgba(120,220,120,0.7);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .card-title {
+      font-size: 3rem;
+      letter-spacing: 0.1em;
+      color: inherit;
+      text-decoration: none;
+      pointer-events: auto;   
+      user-select: none;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-title::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      right: 0;
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,               /* vertical because writing-mode: vertical-rl */
+        rgba(62,120,255,0.9),
+        rgba(157,65,255,0.9)
+      );
+      transform: scaleY(0);      /* hidden by default — scaleY because vertical */
+      transform-origin: top;
+      transition: transform 1s ease;
+      border-radius: 2px;
+    }
+
+    .card-title:hover {
+      cursor: pointer;
+    }
+
+    .card-title:hover::after {
+      transform: scaleY(1);
+    }
+
+    
+    .card-en-title {
+      font-size: 1.4rem;
+      opacity: 0.6;
+      font-style: italic;
+      pointer-events: none;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .section-title {
+      flex: 0 0 300px;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;  
+    }
+
+    .section-title span {
+      writing-mode: vertical-rl;
+      letter-spacing: 0.5em;
+      font-size: 2rem;
+      font-weight: 500;
+      background: linear-gradient(135deg, #86c9ff 10%, #8356ff 50%, #9225ff 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      border: 2px solid rgba(247, 221, 169, 0.546);
+      border-radius: 8px;
+      padding: 0.6em 0.3em;
+    }
+
+        .hero-panel {
+      flex: 0 0 60vh;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .hero-panel img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="podcast-layout">
+
+    <!-- ── LEFT PLAYER ────────────────────────── -->
+    <div class="player-fixed">
+
+      <!-- Title column -->
+      <div class="player-title-col">
+        <span id="playerTitle" class="player-title empty">— 未選択 —</span>
+      </div>
+
+      <!-- Seek + timer + volume column -->
+      <div class="player-seek-col">
+        <input type="range" class="player-seek" id="seekBar"
+               min="0" max="100" value="0" step="0.1" aria-label="再生位置" />
+
+        <div id="playerTimer" class="player-timer" aria-live="polite">〇分〇秒</div>
+
+        <div class="player-volume-wrap">
+          <span class="vol-label">音量</span>
+          <input type="range" class="player-volume" id="volumeBar"
+                 min="0" max="1" value="0.8" step="0.01" aria-label="音量" />
+        </div>
+      </div>
+
+      <!-- Buttons column -->
+      <div class="player-btns">
+        <button class="p-btn" id="btnPlay"   aria-label="再生">再</button>
+        <button class="p-btn" id="btnRewind" aria-label="巻き戻し10秒">戻</button>
+        <button class="p-btn" id="btnSpeed"  aria-label="再生速度">×1.0</button>
+      </div>
+
+    </div>
+
+    <!-- hidden real <audio> -->
+    <audio id="globalAudio"></audio>
+
+    <!-- ── RIGHT LIST ─────────────────────────── -->
+    <div class="scroll-wrapper">
+      <div class="section-title">
+        <span>・音声編・</span>
+      </div>
+
+      <div class="hero-panel">
+        <img src={pageHeroImage} alt="" />
+      </div>
+
+      {groups.map((group) => (
+        <>
+          <div class="category-divider">
+            <div class="category-line"></div>
+            <span class="category-label">{group.name}</span>
+          </div>
+
+          {group.items.map((audio) => (
+            <div
+              class="audio-card"
+              data-src={audio.src}
+              data-title={audio.title}
+              data-image={audio.image}
+              style={audio.image ? `background-image: url('${audio.image}')` : ''}
+            >
+              <div class="card-highlight-line" aria-hidden="true"></div> 
+
+              <!-- play / pause overlay -->
+              <div class="card-play-btn" aria-hidden="true">
+                <svg class="icon-play"  viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              </div>
+
+              <div class="card-meta">
+                <span class="card-cat">{audio.category}</span>
+                <a class="card-title" href={`/${audio.postSlug}`}>{audio.title}</a>
+                {audio.enTitle && (
+                  <span class="card-en-title">{audio.enTitle}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </>
+      ))}
+
+
+      <!-- spacer so content doesn't hide under floating player (row-reverse: last DOM = leftmost) -->
+      <div class="scroll-offset" aria-hidden="true"></div>
+
+    </div>
+  </div>
+
+  <!-- ── Script ───────────────────────────────── -->
+  <script>
+    // ── Kanji helpers (from tate-audio.js) ─────
+    function toKanjiDigits(num: number): string {
+      const map = '〇一二三四五六七八九';
+      return num.toString().replace(/\d/g, (d) => map[parseInt(d)]);
+    }
+
+    function toKanjiTime(totalSeconds: number, showHours = false): string {
+      const s       = Math.floor(totalSeconds);
+      const hours   = Math.floor(s / 3600);
+      const minutes = Math.floor((s % 3600) / 60);
+      const seconds = s % 60;
+      let result = '';
+      if (showHours || hours > 0) result += toKanjiDigits(hours) + '時';
+      result += toKanjiDigits(minutes) + '分';
+      result += toKanjiDigits(seconds) + '秒';
+      return result;
+    }
+
+    // ── DOM refs (TS-safe: no SVGElement cast) ──
+    const audioEl    = document.getElementById('globalAudio') as HTMLAudioElement;
+    const btnPlay    = document.getElementById('btnPlay')     as HTMLButtonElement;
+    const btnRewind  = document.getElementById('btnRewind')   as HTMLButtonElement;
+    const btnSpeed   = document.getElementById('btnSpeed')    as HTMLButtonElement;
+    const seekBar    = document.getElementById('seekBar')     as HTMLInputElement;
+    const volumeBar  = document.getElementById('volumeBar')   as HTMLInputElement;
+    const playerTitle= document.getElementById('playerTitle') as HTMLElement;
+    const playerTimer= document.getElementById('playerTimer') as HTMLElement;
+
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.audio-card'));
+
+    // ── Speed steps ─────────────────────────────
+    const SPEEDS = [0.75, 1.0, 1.25, 1.5, 2.0];
+    let speedIdx = 1; // default ×1.0
+
+    // ── Initial volume ──────────────────────────
+    audioEl.volume = parseFloat(volumeBar.value);
+
+    // ── Timer update ────────────────────────────
+    function updateTimer(current: number, duration: number) {
+      if (!duration) { playerTimer.textContent = '〇分〇秒'; return; }
+      const needsH = duration >= 3600;
+      playerTimer.textContent =
+        `${toKanjiTime(current, needsH)}／${toKanjiTime(duration, needsH)}`;
+    }
+
+    // ── Play/stop UI ────────────────────────────
+    function setPlayingUI(playing: boolean) {
+      if (playing) {
+        btnPlay.textContent = '止';
+        btnPlay.classList.add('playing');
+      } else {
+        btnPlay.textContent = '再';
+        btnPlay.classList.remove('playing');
+      }
+
+      const activeCard = cards.find(c => c.classList.contains('active'));
+      if (activeCard) {
+        activeCard.classList.toggle('paused', !playing);
+      }
+    }
+
+    // ── Load & play a card ──────────────────────
+    function loadCard(card: HTMLElement, autoplay = true) {
+      const src   = card.dataset.src   ?? '';
+      const title = card.dataset.title ?? '';
+
+      cards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+
+      playerTitle.textContent = title;
+      playerTitle.classList.toggle('empty', !title);
+
+      if (audioEl.src !== src) {
+        audioEl.src = src;
+      }
+      audioEl.playbackRate = SPEEDS[speedIdx];
+
+      if (autoplay) {
+        audioEl.play();
+        setPlayingUI(true);
+      }
+
+      card.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+    }
+
+    // ── Card click ──────────────────────────────
+    cards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        // If the title link was clicked, let the browser navigate normally
+        if ((e.target as HTMLElement).closest('.card-title')) return;
+
+        if (card.classList.contains('active')) {
+          if (audioEl.paused) { audioEl.play(); setPlayingUI(true); }
+          else                { audioEl.pause(); setPlayingUI(false); }
+        } else {
+          loadCard(card, true);
+        }
+      });
+    });
+
+    // ── Play / stop button ──────────────────────
+    btnPlay.addEventListener('click', () => {
+      if (audioEl.paused) { audioEl.play(); setPlayingUI(true); }
+      else                { audioEl.pause(); setPlayingUI(false); }
+    });
+
+    // ── Rewind 10 s ─────────────────────────────
+    btnRewind.addEventListener('click', () => {
+      audioEl.currentTime = Math.max(0, audioEl.currentTime - 10);
+    });
+
+    // ── Speed cycle ─────────────────────────────
+    btnSpeed.addEventListener('click', () => {
+      speedIdx = (speedIdx + 1) % SPEEDS.length;
+      const rate = SPEEDS[speedIdx];
+      audioEl.playbackRate = rate;
+      btnSpeed.textContent = `×${rate.toFixed(2).replace(/\.?0+$/, '')}`;
+    });
+
+    // ── Seek (display) ──────────────────────────
+    audioEl.addEventListener('timeupdate', () => {
+      if (!audioEl.duration) return;
+      seekBar.value = String((audioEl.currentTime / audioEl.duration) * 100);
+      updateTimer(audioEl.currentTime, audioEl.duration);
+    });
+
+    audioEl.addEventListener('loadeddata', () => {
+      if (audioEl.duration) updateTimer(0, audioEl.duration);
+    });
+
+    // ── Seek (drag) ─────────────────────────────
+    seekBar.addEventListener('input', () => {
+      if (!audioEl.duration) return;
+      const t = (parseFloat(seekBar.value) / 100) * audioEl.duration;
+      audioEl.currentTime = t;
+      updateTimer(t, audioEl.duration);
+    });
+
+    // ── Volume ──────────────────────────────────
+    volumeBar.addEventListener('input', () => {
+      audioEl.volume = parseFloat(volumeBar.value);
+    });
+
+    audioEl.addEventListener('volumechange', () => {
+      volumeBar.value = String(audioEl.volume);
+    });
+
+    // ── Ended → auto-advance ────────────────────
+    audioEl.addEventListener('ended', () => {
+      setPlayingUI(false);
+      seekBar.value = '0';
+      updateTimer(0, audioEl.duration);
+      const active = cards.findIndex(c => c.classList.contains('active'));
+      if (active !== -1 && active + 1 < cards.length) {
+        loadCard(cards[active + 1], true);
+      }
+    });
+  </script>
+</body>
+</html>

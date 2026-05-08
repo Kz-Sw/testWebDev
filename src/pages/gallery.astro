@@ -1,0 +1,806 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import MainHead from '../components/MainHead.astro';
+import { toKanjiDigits, slugify } from '../scripts/utils';
+
+export interface Props {
+  title?: string;
+  mainTitle?: string;
+}
+
+interface GalleryImage {
+  path:      string;   // public path: "/images/posts/za-1_hero.jpg"
+  category:  string;   // "ZA"
+  number:    string;   // "1"
+  heroTitle: string;   // "人間の廃絶"
+  enTitle:   string;   // "Abolition of Man"
+  postSlug:  string;   // "za/001-abolition-of-man"
+}
+
+interface CategoryGroup {
+  name:  string;
+  items: GalleryImage[];
+}
+
+const {
+  title     = 'ギャラリー',
+  mainTitle = '画廊',
+} = Astro.props;
+
+// ── Pull all posts from the content collection ───────────────────────────────
+// getCollection is the modern Astro v2/v3/v4 API — no glob needed.
+const allPosts = await getCollection('posts', ({ data }: CollectionEntry<'posts'>) => !data.draft);
+
+// ── Build gallery images from post frontmatter ───────────────────────────────
+// Each post has heroMedia.url like "../../images/posts/za-1_hero.jpg"
+// We normalise that to a public path "/images/posts/za-1_hero.jpg"
+// and construct the slug from category + zero-padded number + slugified enTitle.
+
+const images: GalleryImage[] = allPosts
+  .filter((post: CollectionEntry<'posts'>) => post.data.heroMedia?.url)
+  .map((post: CollectionEntry<'posts'>) => {
+    const { heroTitle, enTitle, category, number, heroMedia } = post.data;
+
+    // Normalise heroMedia.url to a root-relative public path
+    // frontmatter value: "../../images/posts/za-1_hero.jpg"
+    // → we just want:    "/images/posts/za-1_hero.jpg"
+    const rawUrl    = heroMedia?.url ?? '';
+    const publicPath = rawUrl.startsWith('/')
+      ? rawUrl                                         // already absolute
+      : '/images/posts/' + rawUrl.split('/').pop();   // strip relative prefix
+
+    // Build slug matching your getStaticPaths pattern: /za/001-abolition-of-man
+    const paddedNum = String(number).padStart(3, '0');
+    const postSlug  = `${category}/${paddedNum}-${slugify(enTitle ?? '')}`;
+
+    return {
+      path:      publicPath,
+      category:  category.toUpperCase(),
+      number:    String(number),
+      heroTitle: heroTitle ?? '',
+      enTitle:   enTitle   ?? '',
+      postSlug,
+    };
+  });
+
+// ── Category display order — list preferred categories first ─────────────────
+// Any category not listed here will appear after, in alphabetical order.
+const CATEGORY_ORDER: string[] = ['ZA', 'ES'];
+
+function categoryRank(cat: string): number {
+  const idx = CATEGORY_ORDER.indexOf(cat);
+  return idx !== -1 ? idx : CATEGORY_ORDER.length;
+}
+
+images.sort((a, b) =>
+  categoryRank(a.category) - categoryRank(b.category) ||
+  Number(a.number) - Number(b.number)
+);
+
+// ── Group by category for the template ──────────────────────────────────────
+const groups: CategoryGroup[] = [];
+for (const img of images) {
+  const last = groups[groups.length - 1];
+  if (last && last.name === img.category) {
+    last.items.push(img);
+  } else {
+    groups.push({ name: img.category, items: [img] });
+  }
+}
+
+const orderedImages: GalleryImage[] = groups.flatMap((g) => g.items);
+---
+
+<html lang="ja">
+  <head>
+    <MainHead title={title} description="さぶろう座 ギャラリー" />
+    <style>
+      /* ── RESET ── */
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        color: #e8e0d0;
+        font-family: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      /* ── HORIZONTAL SCROLL ENGINE (right-to-left) ── */
+      .scroll-wrapper {
+        display: flex;
+        flex-direction: row-reverse;
+        height: 100vh;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: #2a2a2a #000;
+      }
+      .scroll-wrapper::-webkit-scrollbar { height: 4px; }
+      .scroll-wrapper::-webkit-scrollbar-track { background: #000; }
+      .scroll-wrapper::-webkit-scrollbar-thumb { background: #1e3a1e; border-radius: 2px; }
+
+      /* ── HERO PANEL ── */
+      .hero-section {
+        flex: 0 0 72vh;
+        height: 100vh;
+        position: relative;
+        background: #000;
+        overflow: hidden;
+      }
+      .hero-section img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        opacity: 0.55;
+      }
+      .hero-overlay {
+        position: absolute;
+        top: 28%;
+        right: 9%;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: 2.8rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        color: #e8e0d0;
+        text-shadow:
+          0 0 40px rgba(60, 180, 80, 0.5),
+          0 2px 8px rgba(0,0,0,0.9);
+        background: rgba(0, 60, 0, 0.55);
+        padding: 1.2rem 0.6rem;
+        border-left: 1px solid rgba(60,180,80,0.3);
+      }
+      .hero-subtitle {
+        position: absolute;
+        bottom: 12%;
+        right: 9%;
+        writing-mode: vertical-rl;
+        font-size: 0.75rem;
+        letter-spacing: 0.3em;
+        color: rgba(200,220,200,0.5);
+      }
+
+      /* ── CATEGORY DIVIDER ── */
+      .category-divider {
+        flex: 0 0 48px;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(to bottom, #050505, #0a1a0a, #050505);
+        border-right: 1px solid rgba(60,180,60,0.12);
+        border-left:  1px solid rgba(60,180,60,0.06);
+        position: relative;
+      }
+      .category-line {
+        position: absolute;
+        top: 0; bottom: 0;
+        left: calc(50% - 0.5px);
+        width: 1px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          rgba(60,180,60,0.15) 30%,
+          rgba(60,180,60,0.15) 70%,
+          transparent
+        );
+      }
+      .category-label {
+        writing-mode: vertical-rl;
+        font-size: 0.65rem;
+        letter-spacing: 0.5em;
+        color: rgba(60,180,60,0.45);
+        text-transform: uppercase;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ── GALLERY STRIP ── */
+      .gallery-strip {
+        display: flex;
+        flex-direction: row-reverse;
+        align-items: stretch;
+        height: 100vh;
+      }
+
+      /* ── IMAGE CARD ── */
+      .img-card {
+        flex: 0 0 auto;
+        width: 54vh;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        border-right: 1px solid rgba(255,255,255,0.04);
+      }
+      .img-card:hover .card-img    { transform: scale(1.04); filter: brightness(0.8) saturate(1.15); }
+      .img-card:hover .card-meta   { opacity: 1; transform: translateY(0); }
+      .img-card:hover .expand-hint { opacity: 1; }
+
+      .card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        transition:
+          transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94),
+          filter    0.7s ease;
+      }
+      .img-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(0,0,0,0.72) 0%,
+          rgba(0,0,0,0.10) 45%,
+          rgba(0,0,0,0.25) 100%
+        );
+        pointer-events: none;
+      }
+
+      .card-meta {
+        position: absolute;
+        bottom: 2rem;
+        right: 1.2rem;
+        z-index: 2;
+        writing-mode: vertical-rl;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.6rem;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.4s ease, transform 0.4s ease;
+      }
+      .card-cat {
+        font-size: 0.55rem;
+        letter-spacing: 0.55em;
+        color: rgba(120,220,120,0.7);
+        text-transform: uppercase;
+      }
+      .card-num {
+        font-size: 1.1rem;
+        color: rgba(230,230,220,0.85);
+        font-weight: 300;
+        letter-spacing: 0.1em;
+      }
+      .card-title {
+        font-size: 0.9rem;
+        color: rgba(232,224,208,0.92);
+        font-weight: 400;
+        letter-spacing: 0.1em;
+        max-height: 55vh;
+        overflow: hidden;
+      }
+      .card-en-title {
+        font-size: 0.6rem;
+        color: rgba(180,200,180,0.5);
+        letter-spacing: 0.15em;
+        font-style: italic;
+        max-height: 30vh;
+        overflow: hidden;
+      }
+
+      .expand-hint {
+        position: absolute;
+        top: 1.2rem;
+        left: 1.2rem;
+        z-index: 2;
+        width: 28px;
+        height: 28px;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+      .expand-hint svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 1.5; }
+
+      /* ── LIGHTBOX ── */
+      #lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0,0,0,0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        cursor: default !important;  
+        transition: background 0.4s ease, opacity 0.4s ease;
+      }
+      #lightbox.open {
+        background: rgba(0,0,0,0.94);
+        opacity: 1;
+        pointer-events: all;
+        cursor: default;  
+      }
+      #lightbox-img {
+        max-width: 90vw;
+        max-height: 82vh;
+        object-fit: contain;
+        border: 1px solid rgba(255,255,255,0.07);
+        box-shadow: 0 0 80px rgba(0,0,0,0.9);
+        transform: scale(0.96);
+        transition:
+          transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94),
+          opacity   0.18s ease;
+        display: block;
+        cursor: zoom-in;
+        
+      }
+
+      #lightbox-img.zoomed {
+        cursor: zoom-out;
+        max-width: none;
+        max-height: none;
+        transform: scale(1);          /* override the open-state scale */
+        transition: none;             /* instant while panning */
+      }
+      #lightbox-img.zoomed-enter {
+        transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+      }
+
+      #lightbox {
+        /* existing rules stay — just add: */
+        overflow: hidden;
+      }
+      #lightbox.zoomed {
+        overflow: scroll;
+        cursor: grab;
+      }
+      #lightbox.zoomed.dragging {
+        cursor: grabbing;
+      }
+
+      /* ── Hide nav + caption when zoomed ── */
+      #lightbox.zoomed #lightbox-footer,
+      #lightbox.zoomed #lightbox-prev,
+      #lightbox.zoomed #lightbox-next {
+        opacity: 0;
+        pointer-events: none;
+        cursor: none;
+        transition: none;
+      }
+
+      #lightbox.open #lightbox-img { transform: scale(1); }
+
+      #lightbox-close {
+        position: absolute;
+        top: 2rem; right: 2rem;
+        background: none;
+        border: 1px solid rgba(255,255,255,0.2);
+        color: rgba(255,255,255,0.7);
+        font-size: 1.2rem;
+        width: 40px; height: 40px;
+        cursor: none;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: border-color 0.2s, color 0.2s;
+        font-family: inherit;
+      }
+      #lightbox-close:hover { border-color: rgba(60,180,60,0.6); color: #fff; }
+
+      #lightbox-prev,
+      #lightbox-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: 1px solid rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.6);
+        font-size: 1.4rem;
+        width: 44px; height: 64px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: border-color 0.2s, color 0.2s;
+        font-family: inherit;
+      }
+      #lightbox-prev { left: 2rem; }
+      #lightbox-next { right: 2rem; }
+      #lightbox-prev:hover,
+      #lightbox-next:hover { border-color: rgba(60,180,60,0.5); color: #fff; }
+
+      #lightbox-footer {
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: default;
+      }
+      #lightbox-caption {
+        font-size: 1rem;
+        letter-spacing: 0.18em;
+        color: rgba(220,210,190,0.75);
+        white-space: nowrap;
+        user-select: none;
+        cursor: default;
+      }
+      #lightbox-en-caption {
+        font-size: 0.65rem;
+        letter-spacing: 0.25em;
+        color: rgba(160,180,160,0.45);
+        font-style: italic;
+        white-space: nowrap;
+        user-select: none;
+        cursor: default;
+      }
+      #lightbox-link {
+        font-size: 0.62rem;
+        letter-spacing: 0.45em;
+        color: rgba(120,220,120,0.55);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(120,220,120,0.25);
+        white-space: nowrap;
+        transition: color 0.2s, border-color 0.2s;
+        padding-bottom: 1px;
+      }
+      #lightbox-link:hover { color: rgba(120,220,120,0.95); border-color: rgba(120,220,120,0.65); }
+
+      /* ── TAIL ── */
+      .tail-panel {
+        flex: 0 0 120px;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+      }
+      .tail-text {
+        writing-mode: vertical-rl;
+        font-size: 0.6rem;
+        letter-spacing: 0.6em;
+        color: rgba(255,255,255,0.08);
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="scroll-wrapper" id="scrollWrapper">
+
+      <!-- HERO -->
+      <div class="hero-section">
+        {orderedImages[0] && (
+          <img src={orderedImages[0].path} alt={mainTitle} />
+        )}
+        <div class="hero-overlay">{mainTitle}</div>
+        <div class="hero-subtitle">画像一覧</div>
+      </div>
+
+      <!-- GALLERY STRIP -->
+      <div class="gallery-strip">
+        {groups.map((group) => (
+          <>
+            <div class="category-divider">
+              <div class="category-line"></div>
+              <span class="category-label">{group.name}</span>
+            </div>
+
+            {group.items.map((img) => {
+              const globalIdx = orderedImages.indexOf(img);
+              const labelText = img.heroTitle || `${img.category}${toKanjiDigits(Number(img.number))}`;
+              return (
+                <div
+                  class="img-card"
+                  data-index={String(globalIdx)}
+                  data-src={img.path}
+                  data-label={labelText}
+                  data-en-label={img.enTitle}
+                  data-slug={img.postSlug}
+                >
+                  <img
+                    class="card-img"
+                    src={img.path}
+                    alt={labelText}
+                    loading="lazy"
+                  />
+                  <div class="card-meta">
+                    <span class="card-cat">{img.category}</span>
+                    {img.heroTitle
+                      ? (
+                        <>
+                          <span class="card-title">{img.heroTitle}</span>
+                          {img.enTitle && (
+                            <span class="card-en-title">{img.enTitle}</span>
+                          )}
+                        </>
+                      )
+                      : <span class="card-num">{toKanjiDigits(Number(img.number))}</span>
+                    }
+                  </div>
+                  <div class="expand-hint" aria-hidden="true">
+                    <svg viewBox="0 0 16 16">
+                      <polyline points="10,2 14,2 14,6" />
+                      <polyline points="6,14 2,14 2,10" />
+                      <line x1="14" y1="2" x2="9" y2="7" />
+                      <line x1="2" y1="14" x2="7" y2="9" />
+                    </svg>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        ))}
+      </div>
+
+      <!-- TAIL -->
+      <div class="tail-panel">
+        <span class="tail-text">さぶろう座</span>
+      </div>
+
+    </div>
+
+    <!-- LIGHTBOX -->
+    <div id="lightbox" role="dialog" aria-modal="true" aria-label="画像ビューア">
+      <button id="lightbox-close" aria-label="閉じる">✕</button>
+      <button id="lightbox-prev"  aria-label="前の画像">‹</button>
+      <img id="lightbox-img" src="" alt="" />
+      <button id="lightbox-next"  aria-label="次の画像">›</button>
+      <div id="lightbox-footer">
+        <span id="lightbox-caption"    aria-live="polite"></span>
+        <span id="lightbox-en-caption"></span>
+        <a    id="lightbox-link" href="#">投稿を読む →</a>
+      </div>
+    </div>
+
+    <script>
+      const scrollWrapper = document.getElementById('scrollWrapper')       as HTMLElement     | null;
+      const lightbox      = document.getElementById('lightbox')            as HTMLElement     | null;
+      const lightboxImg   = document.getElementById('lightbox-img')        as HTMLImageElement| null;
+      const lightboxCap   = document.getElementById('lightbox-caption')    as HTMLElement     | null;
+      const lightboxEnCap = document.getElementById('lightbox-en-caption') as HTMLElement     | null;
+      const lightboxLink  = document.getElementById('lightbox-link')       as HTMLAnchorElement|null;
+      const btnClose      = document.getElementById('lightbox-close')      as HTMLButtonElement|null;
+      const btnPrev       = document.getElementById('lightbox-prev')       as HTMLButtonElement|null;
+      const btnNext       = document.getElementById('lightbox-next')       as HTMLButtonElement|null;
+
+      const allCards = Array.from(
+        document.querySelectorAll<HTMLElement>('.img-card')
+      ).sort((a, b) =>
+        parseInt(a.dataset.index ?? '0', 10) - parseInt(b.dataset.index ?? '0', 10)
+      );
+
+      let currentIndex = 0;
+
+      // ── Zoom / pan state ────────────────────────────────────────────────────────
+      const ZOOM_SCALE  = 2.5;       // tweak to taste
+      let isZoomed      = false;
+      let zoomOriginX   = 50;        // % of image where user clicked
+      let zoomOriginY   = 50;
+
+      // Pan drag state
+      let isPanning     = false;
+      let panStartX     = 0;
+      let panStartY     = 0;
+      let panScrollX    = 0;
+      let panScrollY    = 0;
+
+      function enterZoom(clickX: number, clickY: number): void {
+        if (!lightboxImg || !lightbox) return;
+        const rect = lightboxImg.getBoundingClientRect();
+
+        // origin as % within the image — we zoom toward where the user clicked
+        zoomOriginX = ((clickX - rect.left) / rect.width)  * 100;
+        zoomOriginY = ((clickY - rect.top)  / rect.height) * 100;
+
+        // Size the image to fill viewport * ZOOM_SCALE
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        lightboxImg.style.width     = `${vw  * ZOOM_SCALE}px`;
+        lightboxImg.style.height    = `${vh  * ZOOM_SCALE}px`;
+        lightboxImg.style.maxWidth  = 'none';
+        lightboxImg.style.maxHeight = 'none';
+        lightboxImg.style.transform = 'none';
+
+        lightboxImg.classList.add('zoomed-enter');
+        lightboxImg.classList.add('zoomed');
+        lightbox.classList.add('zoomed');
+        isZoomed = true;
+
+        // Scroll lightbox so the clicked point stays centred
+        requestAnimationFrame(() => {
+          if (!lightbox || !lightboxImg) return;
+          const iw = lightboxImg.offsetWidth;
+          const ih = lightboxImg.offsetHeight;
+          const targetX = (zoomOriginX / 100) * iw - vw  / 2;
+          const targetY = (zoomOriginY / 100) * ih - vh  / 2;
+          lightbox.scrollLeft = Math.max(0, targetX);
+          lightbox.scrollTop  = Math.max(0, targetY);
+
+          // Remove transition class after animation
+          setTimeout(() => lightboxImg?.classList.remove('zoomed-enter'), 350);
+        });
+      }
+
+      function exitZoom(): void {
+        if (!lightboxImg || !lightbox) return;
+        lightboxImg.style.width     = '';
+        lightboxImg.style.height    = '';
+        lightboxImg.style.maxWidth  = '';
+        lightboxImg.style.maxHeight = '';
+        lightboxImg.style.transform = '';
+        lightboxImg.classList.remove('zoomed', 'zoomed-enter');
+        lightbox.classList.remove('zoomed', 'dragging');
+        isZoomed = false;
+        lightbox.style.cursor  = ''; 
+        lightboxImg.style.cursor = ''; 
+      }
+
+      // ── Image display ────────────────────────────────────────────────────────────
+      function showImage(index: number): void {
+        const card = allCards[index];
+        if (!card || !lightboxImg || !lightboxCap) return;
+
+        exitZoom();   // always reset zoom when switching images
+
+        const src     = card.dataset.src     ?? '';
+        const label   = card.dataset.label   ?? '';
+        const enLabel = card.dataset.enLabel ?? '';
+        const slug    = card.dataset.slug    ?? '';
+
+        lightboxImg.style.opacity = '0';
+        setTimeout(() => {
+          if (!lightboxImg || !lightboxCap) return;
+          lightboxImg.src           = src;
+          lightboxImg.alt           = label;
+          lightboxImg.style.opacity = '1';
+          lightboxCap.textContent   = label;
+          if (lightboxEnCap) lightboxEnCap.textContent  = enLabel;
+          if (lightboxLink)  lightboxLink.href          = `/${slug}`;
+          if (lightboxLink)  lightboxLink.style.display = slug ? '' : 'none';
+        }, 180);
+      }
+
+      // ── Open / close ──────────────────────────────────────────────────────────
+      function openLightbox(card: HTMLElement): void {
+        if (!lightbox) return;
+        currentIndex = parseInt(card.dataset.index ?? '0', 10);
+        lightbox.classList.add('open');
+        showImage(currentIndex);
+        document.addEventListener('keydown', onKeyDown);
+      }
+
+      function closeLightbox(): void {
+        exitZoom();
+        lightbox?.classList.remove('open');
+        document.removeEventListener('keydown', onKeyDown);
+      }
+
+      // ── Navigation ───────────────────────────────────────────────────────────
+      function navigate(dir: -1 | 1): void {
+        currentIndex = (currentIndex + dir + allCards.length) % allCards.length;
+        showImage(currentIndex);
+      }
+
+      function onKeyDown(e: KeyboardEvent): void {
+        if (e.key === 'Escape')     { isZoomed ? exitZoom() : closeLightbox(); }
+        if (e.key === 'ArrowLeft'  && !isZoomed) navigate(-1);
+        if (e.key === 'ArrowRight' && !isZoomed) navigate(1);
+      }
+
+      // ── Zoom: click on image ──────────────────────────────────────────────────
+      lightboxImg?.addEventListener('click', (e: MouseEvent) => {
+        e.stopPropagation();
+        if (isZoomed) {
+          exitZoom();
+        } else {
+          enterZoom(e.clientX, e.clientY);
+        }
+      });
+
+      // ── Pan: drag while zoomed ────────────────────────────────────────────────
+      lightbox?.addEventListener('mousedown', (e: MouseEvent) => {
+        if (!isZoomed || e.button !== 0) return;
+        isPanning  = true;
+        panStartX  = e.clientX;
+        panStartY  = e.clientY;
+        panScrollX = lightbox.scrollLeft;
+        panScrollY = lightbox.scrollTop;
+        lightbox.classList.add('dragging');
+      });
+
+      window.addEventListener('mousemove', (e: MouseEvent) => {
+        if (!isPanning || !lightbox) return;
+        lightbox.scrollLeft = panScrollX - (e.clientX - panStartX);
+        lightbox.scrollTop  = panScrollY - (e.clientY - panStartY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (!isPanning) return;
+        isPanning = false;
+        lightbox?.classList.remove('dragging');
+      });
+
+      // ── Touch pinch-to-zoom (mobile) ─────────────────────────────────────────
+      let lastTouchDist = 0;
+
+      lightbox?.addEventListener('touchstart', (e: TouchEvent) => {
+        if (e.touches.length === 2) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          lastTouchDist = Math.hypot(dx, dy);
+        }
+      }, { passive: true });
+
+      lightbox?.addEventListener('touchend', (e: TouchEvent) => {
+        // Single tap while zoomed = exit zoom; while not zoomed = enter zoom centered
+        if (e.changedTouches.length === 1 && e.touches.length === 0) {
+          const t = e.changedTouches[0];
+          if (isZoomed) {
+            exitZoom();
+          } else if (e.target === lightboxImg) {
+            enterZoom(t.clientX, t.clientY);
+          }
+        }
+      }, { passive: true });
+
+      lightbox?.addEventListener('touchmove', (e: TouchEvent) => {
+        if (e.touches.length === 2) {
+          const dx   = e.touches[0].clientX - e.touches[1].clientX;
+          const dy   = e.touches[0].clientY - e.touches[1].clientY;
+          const dist = Math.hypot(dx, dy);
+          if (lastTouchDist > 0) {
+            const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            if (dist > lastTouchDist + 8 && !isZoomed)  enterZoom(cx, cy);
+            if (dist < lastTouchDist - 8 &&  isZoomed)  exitZoom();
+          }
+          lastTouchDist = dist;
+        }
+      }, { passive: true });
+
+      // ── Other event wiring (unchanged) ───────────────────────────────────────
+      allCards.forEach((card) => card.addEventListener('click', () => openLightbox(card)));
+      btnClose?.addEventListener('click', closeLightbox);
+      btnPrev?.addEventListener('click',  () => navigate(-1));
+      btnNext?.addEventListener('click',  () => navigate(1));
+
+      lightbox?.addEventListener('click', (e: MouseEvent) => {
+        if (e.target === lightbox) closeLightbox();
+      });
+      lightboxLink?.addEventListener('click', (e: MouseEvent) => e.stopPropagation());
+
+      scrollWrapper?.addEventListener('wheel', (e: WheelEvent) => {
+        e.preventDefault();
+        if (scrollWrapper) scrollWrapper.scrollLeft -= e.deltaY * 1.2;
+      }, { passive: false });
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target as HTMLElement;
+            el.style.opacity   = '1';
+            el.style.transform = 'translateY(0)';
+          });
+        },
+        { threshold: 0.1 }
+      );
+
+      allCards.forEach((card, i) => {
+        card.style.opacity    = '0';
+        card.style.transform  = 'translateY(12px)';
+        card.style.transition = `opacity 0.6s ease ${i * 0.05}s, transform 0.6s ease ${i * 0.05}s`;
+        observer.observe(card);
+      });
+    </script>
+  </body>
+</html>

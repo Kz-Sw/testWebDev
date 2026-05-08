@@ -1,0 +1,21 @@
+---
+import Link from '../components/Link.astro';
+import MainLayout from '../layouts/MainLayout.astro';
+const pageTitle = "四〇四";
+---
+<MainLayout title={pageTitle}>
+    <div class="container" style={{
+        display: "grid",
+        placeItems: "center",
+        textAlign: "center",
+        gap: "var(--small-sm)",
+    }}>
+    </div>
+  <h1>{pageTitle} </h1>
+  <h1>迷子でしょうか</h1>
+  <Link 
+    href="/"
+    style="secondary"
+    text="家はこちら"
+    />
+</MainLayout>

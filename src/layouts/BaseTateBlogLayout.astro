@@ -1,0 +1,95 @@
+---
+// BaseTateBlogLayout.astro
+import Header from '../components/header1Blog.astro';
+import Footer from '../components/footer1Blog.astro';
+import '../styles/verticalBlog.css';
+import {toKanjiDigits, slugify} from "../scripts/utils"
+
+const { frontmatter,prevPost, nextPost, category } = Astro.props;
+console.log('LAYOUT RECEIVED:', frontmatter);
+const { title, author, enAuthor, heroMedia, heroTitle, enTitle, number, description, customCSS } = frontmatter;
+const fullTitle = number ? `第${toKanjiDigits(number)}座　${heroTitle}` : heroTitle;
+
+const mediaType = heroMedia?.type ?? "image";
+const mediaPosition = heroMedia?.position ?? "center center";
+---
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{heroTitle}</title>
+    
+    <!-- Custom CSS per post -->
+    {customCSS && <style set:html={customCSS} />}
+    <script src="/components/tate-audio.js" defer></script>
+  </head>
+  <body>
+    <Header 
+      heroTitle={fullTitle}
+      author={author}
+    />
+
+    <div class="scroll-wrapper">
+      <div class="hero-section">
+        {heroMedia && heroMedia.type === "image" && (
+          <img 
+            src={heroMedia.url} 
+            alt={heroMedia.alt ?? heroTitle}
+            style={`object-position: ${heroMedia.position ?? "center center"};`}
+          />
+        )}
+        
+        {heroMedia && heroMedia.type === "video" && (
+          <video
+            src={heroMedia.url}
+            poster={heroMedia.poster}
+            autoplay
+            muted
+            loop
+            playsinline
+            style={`object-position: ${heroMedia.position ?? "center center"};`}
+          ></video>
+        )}
+
+        <div class="hero-title">
+          {fullTitle}<span class="author">{author}</span>
+        </div>
+        <div class="en-title">
+          <div class="title-text">{enTitle}</div>
+          <div class="en-author">{enAuthor}</div>
+        </div>
+      </div>
+      
+      <slot />
+    </div>
+    <!-- Everything comes from the .md file -->
+
+
+    <Footer 
+      author={author}
+      enAuthor={enAuthor}
+      heroTitle={heroTitle}
+      enTitle={enTitle}
+      prevPost={prevPost}
+      nextPost={nextPost}
+      category={category}
+    />    
+  
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const scroller = document.querySelector(".scroll-wrapper") as HTMLElement;
+        if (!scroller) return;
+        
+        scroller.scrollLeft = scroller.scrollWidth - scroller.clientWidth;
+        
+        requestAnimationFrame(() => {
+          scroller.style.visibility = "visible";
+        });
+      });
+    </script>
+  </body>
+</html>

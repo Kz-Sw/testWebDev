@@ -1,0 +1,394 @@
+---
+import { toKanjiDigits, slugify } from "../scripts/utils";
+import { categoryConfig } from "../scripts/categories";
+
+const { post } = Astro.props;
+const { 
+  heroTitle, 
+  author, 
+  number,        // Using the new universal 'number' 
+  category, 
+  heroMedia, 
+  tags, 
+  enTitle 
+} = post.data;
+
+const mediaPosition = heroMedia?.position ?? "50% 50%";
+const mediaScale = heroMedia?.scale ?? 1;
+const offsetX = heroMedia?.offsetX ?? 0;
+const offsetY = heroMedia?.offsetY ?? 0;
+
+let mediaAlt: string | undefined;
+let mediaPoster: string | undefined;
+
+if (heroMedia?.type === "image") {
+  mediaAlt = heroMedia.alt ?? heroTitle;
+}
+
+if (heroMedia?.type === "video") {
+  mediaPoster = heroMedia.poster;
+}
+
+
+// 1. Generate URL: /[category]/[000-slugified-en-title]
+// Logic matches [slug].astro to ensure links work [cite: 10]
+const fileName = post.id?.split('/').pop()?.replace('.mdx', '') || '';
+const slugBase = enTitle ? slugify(enTitle) : fileName;
+const paddedNum = number ? String(number).padStart(3, '0') : null;
+const actualSlug = paddedNum ? `${paddedNum}-${slugBase}` : slugBase;
+
+// Path is now directly under category (no /posts/ prefix) 
+const postUrl = `/${category}/${actualSlug}`;
+
+// 2. Generate Full Title using modular categoryConfig [cite: 13, 14]
+const config = categoryConfig[category];
+const kanjiNum = number ? toKanjiDigits(number) : "";
+const decoration = config?.decoration;
+const layout = config?.layout;
+const fullTitle = config 
+  ? `${config.prefix || "第"}${kanjiNum}${config.suffix}　${heroTitle}`
+  : heroTitle;
+
+// Build inline styles from config
+const titleSectionStyle = layout?.titleSection ? `
+  ${layout.titleSection.marginRight ? `margin-right: ${layout.titleSection.marginRight};` : ''}
+  ${layout.titleSection.alignItems ? `align-items: ${layout.titleSection.alignItems};` : ''}
+  ${layout.titleSection.flexDirection ? `flex-direction: ${layout.titleSection.flexDirection};` : ''}
+`.trim() : '';
+
+const titleStyle = layout?.title ? `
+  ${layout.title.top ? `top: ${layout.title.top};` : ''}
+  ${layout.title.right ? `right: ${layout.title.right};` : ''}
+  ${layout.title.marginTop ? `margin-top: ${layout.title.marginTop};` : ''}
+  ${layout.title.marginBottom ? `margin-bottom: ${layout.title.marginBottom};` : ''}
+  ${layout.title.left ? `left: ${layout.title.left};` : ''}
+  ${layout.title.marginLeft ? `margin-left: ${layout.title.marginLeft};` : ''}
+  ${layout.title.position ? `margin-left: ${layout.title.position};` : ''}
+  ${layout.title.alignItems ? `align-items: ${layout.title.alignItems};` : ''}
+  ${layout.title.fontSize ? `font-size: ${layout.title.fontSize};` : ''}
+  ${layout.title.writingMode ? `writing-mode: ${layout.title.writingMode};` : ''}
+  ${layout.title.textOrientation ? `text-orientation: ${layout.title.textOrientation};` : ''}
+  ${layout.title.transform ? `transform: ${layout.title.transform};` : ''}
+  ${layout.title.opacity !== undefined ? `opacity: ${layout.title.opacity};` : ''}
+  ${layout.title.display ? `display: ${layout.title.display};` : ''}
+  ${layout.title.flexDirection ? `flex-direction: ${layout.title.flexDirection};` : ''}
+  ${layout.title.justifyContent ? `justify-content: ${layout.title.justifyContent};` : ''}
+  ${layout.title.height ? `height: ${layout.title.height};` : ''}
+  ${layout.title.boxSizing ? `box-sizing: ${layout.title.boxSizing};` : ''}
+`.trim() : '';
+
+const authorStyle = layout?.author ? `
+  ${layout.author.top ? `top: ${layout.author.top};` : ''}
+  ${layout.author.right ? `right: ${layout.author.right};` : ''}
+  ${layout.author.marginRight ? `margin-right: ${layout.author.marginRight};` : ''}
+  ${layout.author.left ? `left: ${layout.author.left};` : ''}
+  ${layout.author.fontSize ? `font-size: ${layout.author.fontSize};` : ''}
+  ${layout.author.writingMode ? `writing-mode: ${layout.author.writingMode};` : ''}
+  ${layout.author.textOrientation ? `text-orientation: ${layout.author.textOrientation};` : ''}
+  ${layout.author.opacity !== undefined ? `opacity: ${layout.author.opacity};` : ''}
+  ${layout.author.display ? `display: ${layout.author.display};` : ''}
+  ${layout.author.flexDirection ? `flex-direction: ${layout.author.flexDirection};` : ''}
+  ${layout.author.justifyContent ? `justify-content: ${layout.author.justifyContent};` : ''}
+  ${layout.author.alignSelf ? `align-self: ${layout.author.alignSelf};` : ''}
+`.trim() : '';
+
+const overlayStyle = layout?.overlay ? `
+  ${layout.overlay.padding ? `padding: ${layout.overlay.padding};` : ''}
+  ${layout.overlay.justifyContent ? `justify-content: ${layout.overlay.justifyContent};` : ''}
+  ${layout.overlay.alignItems ? `align-items: ${layout.overlay.alignItems};` : ''}
+  ${layout.overlay.flexDirection ? `flex-direction: ${layout.overlay.flexDirection};` : ''}
+`.trim() : '';
+
+// Decoration styles
+const cornerDecor = layout?.decorations?.corner;
+const stampDecor = layout?.decorations?.stamp;
+const borderDecor = layout?.decorations?.border;
+const bgDecor = layout?.decorations?.background;
+---
+
+<article class="blog-card" data-tags={tags?.join(',')} data-category={category}>
+  <a href={postUrl} class="card-link">
+    <div class="card-image">
+      {heroMedia && heroMedia.type === "image" && (
+        <img
+          src={heroMedia.url}
+          alt={heroMedia.alt ?? heroTitle}
+          style={`
+            object-position: ${mediaPosition};
+            transform: scale(${mediaScale}) translate(${offsetX}, ${offsetY});
+          `}
+          loading="lazy"
+        />
+      )}
+
+      {heroMedia && heroMedia.type === "video" && (
+        <video
+          src={heroMedia.url}
+          poster={heroMedia.poster}
+          autoplay
+          muted
+          loop
+          playsinline
+          style={`
+            object-position: ${mediaPosition};
+            transform: scale(${mediaScale}) translate(${offsetX}, ${offsetY});
+          `}
+        ></video>
+      )}
+
+      {/* Decorative elements with custom positioning */}
+      {decoration?.corner && (
+        <img 
+          src={decoration.corner} 
+          alt="" 
+          class="decoration-corner"
+          style={cornerDecor ? `
+            ${cornerDecor.top ? `top: ${cornerDecor.top};` : ''}
+            ${cornerDecor.right ? `right: ${cornerDecor.right};` : ''}
+            ${cornerDecor.bottom ? `bottom: ${cornerDecor.bottom};` : ''}
+            ${cornerDecor.left ? `left: ${cornerDecor.left};` : ''}
+            ${cornerDecor.width ? `width: ${cornerDecor.width};` : ''}
+            ${cornerDecor.height ? `height: ${cornerDecor.height};` : ''}
+            ${cornerDecor.opacity !== undefined ? `opacity: ${cornerDecor.opacity};` : ''}
+            ${cornerDecor.zIndex !== undefined ? `z-index: ${cornerDecor.zIndex};` : ''}
+          `.trim() : ''}
+        />
+      )}
+      
+      {decoration?.stamp && (
+        <img 
+          src={decoration.stamp} 
+          alt="" 
+          class="decoration-stamp"
+          style={stampDecor ? `
+            ${stampDecor.top ? `top: ${stampDecor.top};` : ''}
+            ${stampDecor.right ? `right: ${stampDecor.right};` : ''}
+            ${stampDecor.bottom ? `bottom: ${stampDecor.bottom};` : ''}
+            ${stampDecor.left ? `left: ${stampDecor.left};` : ''}
+            ${stampDecor.width ? `width: ${stampDecor.width};` : ''}
+            ${stampDecor.height ? `height: ${stampDecor.height};` : ''}
+            ${stampDecor.opacity !== undefined ? `opacity: ${stampDecor.opacity};` : ''}
+            ${stampDecor.zIndex !== undefined ? `z-index: ${stampDecor.zIndex};` : ''}
+          `.trim() : ''}
+        />
+      )}
+      
+      {decoration?.border && (
+        <img 
+          src={decoration.border} 
+          alt="" 
+          class="decoration-border"
+          style={borderDecor ? `
+            ${borderDecor.opacity !== undefined ? `opacity: ${borderDecor.opacity};` : ''}
+            ${borderDecor.zIndex !== undefined ? `z-index: ${borderDecor.zIndex};` : ''}
+          `.trim() : ''}
+        />
+      )}
+      
+      {decoration?.background && (
+        <div 
+          class="decoration-bg" 
+          style={`
+            background-image: url(${decoration.background});
+            ${bgDecor?.opacity !== undefined ? `opacity: ${bgDecor.opacity};` : ''}
+            ${bgDecor?.zIndex !== undefined ? `z-index: ${bgDecor.zIndex};` : ''}
+            ${bgDecor?.backgroundSize ? `background-size: ${bgDecor.backgroundSize};` : ''}
+            ${bgDecor?.backgroundPosition ? `background-position: ${bgDecor.backgroundPosition};` : ''}
+          `.trim()}
+        ></div>
+      )}
+
+      <div class="image-overlay"></div>
+
+      <div 
+        class="card-main-overlay"
+        style={overlayStyle}
+      >
+        <div class="card-title-section-overlay"
+            style={titleSectionStyle}
+        >
+          <h2 
+            class="card-title vertical-text"
+            style={titleStyle}
+          >
+            <span class="title-prefix">
+              {config?.prefix}
+              <span class="kanji-num">{kanjiNum}</span>
+              {config?.suffix}
+            </span>
+            {heroTitle}
+          </h2>
+          {author && (
+            <p 
+              class="card-author vertical-text"
+              style={authorStyle}
+            >
+              {author}
+            </p>
+
+        )}
+      </div>
+    </div>
+  </a>
+</article>
+
+<style>
+/* Your existing styles remain identical */
+.blog-card {
+  background: black;
+  border-radius: 0px;
+  overflow: hidden;
+  margin: 0; 
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
+  box-sizing: border-box;
+  border: 0px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+
+  width: min(300px, 25vw);
+  aspect-ratio: 1 / 4;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* optional */
+  flex: 0 0 auto;  
+  flex-shrink: 0; 
+  max-width: none;
+}
+
+/* Slight lift on hover */
+.blog-card:hover {
+}
+
+/* Image wrapper */
+.card-image {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Dark by default */
+.card-image img,
+.card-image video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  filter: brightness(0.45) saturate(0.8);
+  transition: filter 0.6s ease, transform 0.6s ease;
+}
+
+/* Restore on hover */
+.blog-card:hover img,
+.blog-card:hover video {
+  filter: brightness(1) saturate(1);
+  transform: scale(1.1);
+}
+
+/* Optional subtle gradient for text readability */
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to left,
+    rgba(0,0,0,0.6),
+    rgba(0,0,0,0.2)
+  );
+  pointer-events: none;
+}
+
+/* Image Origin*/
+.card-image img,
+.card-image video {
+  transform-origin: center;
+}
+
+.card-title-section-overlay {
+  display: flex;
+  gap: 0rem; /* Optional: spacing between title and author */
+}
+
+.card-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Vertical title */
+.card-main-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  z-index: 2;
+}
+
+.card-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-weight: bold;
+  color: rgb(255, 255, 255);
+  background: black;
+  padding: 2rem 0 2rem 0;
+}
+
+.title-prefix {
+  font-size: 0.8em;
+  color: rgb(180, 180, 180);
+  padding: 0 0.5rem 2rem 0;
+}
+.kanji-num {
+  opacity: 1;
+  color: red;
+}
+
+/* Vertical author */
+.card-author {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 1.5rem;
+  opacity: 1;
+  color: rgb(0, 0, 0);
+  background: rgba(244, 244, 244, 0.857);
+  padding: 2rem 0 2rem 0;
+  margin-right: -3rem;
+
+  display: flex;
+  flex-direction: column;
+}
+/* Position decorations */
+.decoration-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.decoration-stamp {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 60px;
+  height: 60px;
+  z-index: 3;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.decoration-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.decoration-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.1;
+  background-size: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+
+</style>

@@ -1,0 +1,120 @@
+/* ZA Text overlay */
+.card-main-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0rem;
+  z-index: 2;
+  align-items: flex-end; /* Align items to the right */
+}
+
+.card-title-section-overlay {
+  display: flex;
+  flex-direction: row-reverse; /* Changed to row since we're working with vertical text */
+  align-items: flex-end; /* This aligns the bottoms together */
+  gap: 0rem; /* Optional: spacing between title and author */
+}
+
+/* Vertical title */
+.card-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 3rem;
+  font-weight: bold;
+  color: rgb(255, 255, 255);
+  background: black;
+  padding: 2rem 0 2rem 0;
+  margin-right: -0.1rem;
+
+}
+.title-prefix {
+  font-size: 0.8em;
+  color: rgb(180, 180, 180);
+  padding: 0 0.5rem 2rem 0;
+}
+.kanji-num {
+  opacity: 1;
+  color: red;
+}
+
+/* Vertical author */
+.card-author {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 1.5rem;
+  opacity: 0.8;
+  color: rgb(0, 0, 0);
+  background: rgb(255, 255, 255);
+  padding: 2rem 0 2rem 0;
+  margin-right: -2.5rem;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* Aligns text to bottom of author container */
+}
+
+
+
+
+/* ##################################*/
+/* ES Text overlay */
+.card-main-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0rem;
+  z-index: 2;
+  align-items: flex-start; /* Align items to the right */
+}
+
+.card-title-section-overlay {
+  display: flex;
+  flex-direction: row-reverse; /* Changed to row since we're working with vertical text */
+  align-items: flex-end; /* This aligns the bottoms together */
+  gap: 0rem; /* Optional: spacing between title and author */
+}
+
+/* Vertical title */
+.card-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 3rem;
+  font-weight: bold;
+  color: rgb(255, 255, 255);
+  background: black;
+  padding: 0rem 0 2rem 0;
+  margin-right: 0rem;
+  
+  display: flex;
+  flex-direction:row; /* Important for vertical-rl */
+  justify-content: flex-end; /* Pushes content to the end */
+  height: 90%; /* Or whatever height you need */
+ 
+}
+.title-prefix {
+  font-size: 0.8em;
+  color: rgb(180, 180, 180);
+  padding: 0 0.5rem 2rem 0;
+}
+.kanji-num {
+  opacity: 1;
+  color: red;
+}
+
+/* Vertical author */
+.card-author {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 1.5rem;
+  opacity: 0.8;
+  color: rgb(0, 0, 0);
+  background: rgb(255, 255, 255);
+  padding: 2rem 0 2rem 0;
+  margin-right: -2.5rem;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Aligns text to bottom of author container */
+}

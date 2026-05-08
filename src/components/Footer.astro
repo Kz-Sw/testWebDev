@@ -1,0 +1,53 @@
+---
+import Social from './social.astro';
+---
+<style>
+  footer {
+    writing-mode: vertical-rl;
+    display: flex;
+    position: fixed;
+    left: 0;
+    flex-direction: column; 
+    gap: 1rem;
+    padding: 2rem;
+    min-height: calc(100vh - 50px);
+    justify-content: center; 
+  }
+  .social-links {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  h3 {
+    margin: 0;
+  }
+</style>
+
+
+<footer>
+    <div class="social-links">
+        <Social platform="twitter" username="astrodotbuild" />
+        <Social platform="github" username="withastro" />
+        <Social platform="youtube" username="astrodotbuild" />
+    </div>
+    <h3>You will own nothing, and be HAPPY.</h3>
+    <small>
+      コピーライト&copy; <span id="copyright"></span> | 寒無朗
+    
+    </small>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    function toKanjiDigits(num: number): string {
+      const map = "〇一二三四五六七八九";
+      return num.toString().replace(/\d/g, (d: string) => map[parseInt(d)]);
+    }
+
+    const el = document.querySelector("#copyright");
+    if (el) {
+      el.textContent = toKanjiDigits(new Date().getFullYear());
+    }
+  });
+</script>
+

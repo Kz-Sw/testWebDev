@@ -1,25 +1,149 @@
 ---
-import '../styles/global.css';
+// index.astro
+import { getCollection, type CollectionEntry } from "astro:content";
+import PostCard from "../components/PostCard.astro";
+import MainHead from '../components/MainHead.astro';
 
-const pageTitle = "Test Astro Home Page";
+// Fetch and sort posts
+const allPosts: CollectionEntry<"posts">[] = await getCollection("posts");
+const visiblePosts = allPosts.filter(
+  (post) => import.meta.env.DEV || !post.data.draft
+);
+const sortedPosts = [...visiblePosts].sort((a, b) => {
+  const dateA = a.data.pubDate;
+  const dateB = b.data.pubDate;
+  if (!dateA && !dateB) return 0;
+  if (!dateA) return 1;
+  if (!dateB) return -1;
+  return dateA.getTime() - dateB.getTime();
+});
 
+// Mock hero data from MainLayout.astro 
+const mainTitle = "さぶろう座";
+const heroMedia = {
+  type: 'image',
+  url: "/images/posts/post-1/post-1_hero.jpg",
+  alt: "hero",
+  position: "center center"
+};
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>{pageTitle}</title>
-	</head>
-	<body>
-		+<a href="/">Home</a>
-		+<a href="/about/">About</a>
-        +<a href="/blog/">Blog</a>
+<html lang="ja">
+  <head>
+    <MainHead title="Testing Layout Sync" description="さぶろう座" />
+    
+    <style>
+      /* Embed the exact CSS from MainLayout.astro  */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        color: white;
+        font-family: 'Noto Serif JP', serif;
+      }
 
-		<h1>{pageTitle}</h1>
-		<h1>My Astro Site This is IT<h1>
-		<h2>This is the top page content</h2>	
-	</body>
+      .scroll-wrapper {
+        display: flex;
+        flex-direction: row-reverse;
+        height: 100vh;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      .hero-section {
+        flex: 0 0 80vh;
+        height: 100vh;
+        position: relative;
+        background: black;
+      }
+
+      .hero-section img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .hero-overlay {
+        position: absolute;
+        top: 30%;
+        right: 10%;
+        transform: translateY(-50%);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: 2.5rem;
+        font-weight: bold;
+        background: rgba(0, 100, 0, 0.7);
+        padding: 1rem 0.5rem;
+      }
+
+      .descrip {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10rem;
+        flex: 0 0 60vh;
+        height: 50vh;
+        position: relative;
+        background-color: black;
+      }
+
+      .descrip-text {
+        writing-mode: vertical-rl;
+        font-size: 1.5rem;
+        text-shadow: 0 0 16px rgba(234, 255, 0, 0.4);
+        filter: blur(0.5px);
+        background: linear-gradient(
+          to bottom left,
+          rgba(8, 62, 255, 0.9),
+          rgba(164, 59, 255, 0.9),
+          rgba(144, 0, 0, 0.6)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+      }
+
+      /* POSTS STRIP */
+      .blog-post-wrapper {
+        display: flex;
+        flex-direction: row-reverse;
+        gap: 0rem;
+        padding: 0rem;
+        align-items: stretch;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="scroll-wrapper">
+      <div class="hero-section">
+        <img 
+          src={heroMedia.url} 
+          alt={heroMedia.alt} 
+          style={`object-position: ${heroMedia.position};`}
+        />
+        <div class="hero-overlay">
+          {mainTitle}
+        </div>
+      </div>
+
+      <div class="descrip">
+        <div class="descrip-text">
+          <ruby>薔薇<rt>ばら</rt></ruby>の下には何がある<br/>
+          三千世界の遥かむこう<br/>
+          それは現か、まぼろしか<br/>
+          銀河と<ruby>阿頼耶<rt>あらや</rt></ruby>の時空を巡り<br/>
+          <br/>
+          寒無の旅路のはじまはじまり
+        </div>
+      </div>      
+      
+      <div class="blog-post-wrapper">
+        {sortedPosts.map((post) => (
+          <PostCard post={post} />
+        ))}
+      </div>
+    </div>
+  </body>
 </html>

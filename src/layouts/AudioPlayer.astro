@@ -1,0 +1,19 @@
+---
+const { frontmatter } = Astro.props;
+
+if (!frontmatter?.audio?.src) {
+  return null;
+}
+
+const title =
+  frontmatter.audio.title ?? frontmatter.title;
+---
+
+<script src="/components/tate-audio.js" defer></script>
+
+<div class="post-audio">
+  <tate-audio
+    src={frontmatter.audio.src}
+    title={title}
+  />
+</div>

@@ -1,0 +1,178 @@
+---
+import MainHead from '../components/MainHead.astro';
+import Footer from '../components/Footer.astro';
+export interface Props {
+  title: string;
+  description?: string;
+  mainImage?: {
+    url: string;
+    alt: string;
+  };
+  mainTitle?: string;
+}
+
+const { 
+  title, 
+  mainImage = {
+    url: '/images/posts/post-1/post-1_hero.jpg',
+    alt: 'モウビ・ディック、再び'
+  },
+  mainTitle = 'さぶろう座',
+  description = "さぶろう座" 
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="ja" dir="ltr">
+  <head>
+    <MainHead {title} {description}/>
+  </head>
+  <body>  
+    <div class="scroll-wrapper">
+      <!-- Hero section - appears at RIGHT -->
+      <div class="hero-section">
+        <img src={mainImage.url} alt={mainImage.alt} /> 
+        <div class="hero-title">
+          {mainTitle}
+        </div>
+      </div>
+
+      <!-- Blog posts - scroll to the LEFT -->
+      <main class="blog-post-wrapper">
+        <slot />
+      </main>
+
+      <Footer />
+    </div>
+  </body>
+</html>
+
+<style>
+  :root {
+    --header-height: 80px;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    font-family: 'Noto Serif JP', serif;
+    background:
+      radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+      repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.02) 0px,
+        rgba(255, 255, 255, 0.02) 1px,
+        transparent 1px,
+        transparent 20px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.02) 0px,
+        rgba(255, 255, 255, 0.02) 1px,
+        transparent 1px,
+        transparent 20px
+      ),
+      #000000;
+    color: #ffffff;
+    line-height: 1.6;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Horizontal scroll container */
+  .scroll-wrapper {
+    visibility: visible; 
+    height: calc(100vh - 50px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: row-reverse; /* Hero on right, content scrolls left */
+    /*scroll-snap-type: x mandatory; /* Optional: snap scrolling This causes view to snap back when you leave your mouse*/
+  }
+
+  /* Hero section - appears at the RIGHTMOST position */
+  .hero-section {
+    height: 100vh;
+    width: calc(100vh * 2 / 4); /* 2:3 aspect ratio */
+    flex-shrink: 0;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    scroll-snap-align: start; /* Optional: snap point */
+  }
+
+  .hero-section img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero-title {
+    position: absolute;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 2.5em;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(0, 100, 0, 0.8);
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    top: 30%;
+    right: 7%;
+    transform: translateY(-50%);
+    z-index: 10;
+    padding: 1em 0.3em;
+  }
+
+  /* Blog posts container - scrolls to the LEFT from hero */
+  .blog-post-wrapper {
+    display: flex;
+    flex-direction: row-reverse; /* Stack posts right to left */
+    min-width: fit-content;
+    height: 100vh;
+    padding: 0rem;
+    gap: none; /* Space between posts */
+  }
+
+  /* Individual blog post styling */
+  .blog-post-wrapper > * {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    height: calc(100vh - 0rem); /* Account for padding */
+    width: auto;
+    scroll-snap-align: start; /* Optional: snap each post */
+  }
+
+  /* True Vertical Writing Utilities */
+  .vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    text-combine-upright: digits 2;
+  }
+
+  .vertical-mixed {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  .horizontal-text {
+    writing-mode: horizontal-tb;
+  }
+
+  .rotated-english-line {
+    writing-mode: vertical-rl;
+    text-orientation: sideways;
+  }
+</style>
+
+<script>
+
+</script>

@@ -1,0 +1,92 @@
+---
+import { categoryConfig } from "../../scripts/categories";
+import { toKanjiDigits, slugify } from "../../scripts/utils";
+import BaseTateBlogLayout from "../../layouts/BaseTateBlogLayout.astro";
+import type { GetStaticPaths, MarkdownInstance } from "astro";
+
+interface Props {
+  post: MarkdownInstance<any>;
+  prevPost: MarkdownInstance<any> | null;
+  nextPost: MarkdownInstance<any> | null;
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const modules = import.meta.glob<MarkdownInstance<any>>(
+    '../../content/posts/*.mdx',
+    { eager: true }
+  );
+
+
+  const allPosts = Object.values(modules)
+    .filter((post) => import.meta.env.DEV || !post.frontmatter.draft)
+    .sort((a, b) => {
+      const dateA = postDate(a);
+      const dateB = postDate(b);
+      return dateA - dateB; // old → new
+    });
+
+  function postDate(p: MarkdownInstance<any>) {
+    return p.frontmatter.pubDate
+      ? new Date(p.frontmatter.pubDate).getTime()
+      : 0;
+  }
+  
+
+  return allPosts.map((post, index) => {
+    const { category, number, enTitle } = post.frontmatter;
+
+    const slugBase = enTitle ? slugify(enTitle) : "untitled";
+    const paddedNum = number ? String(number).padStart(3, "0") : null;
+    const finalSlug = paddedNum ? `${paddedNum}-${slugBase}` : slugBase;
+
+    const safeCategory = category || "misc";
+
+    // Filter same category
+    const sameCategoryPosts = allPosts.filter(
+      (p) => p.frontmatter.category === category
+    );
+
+    // Find index within that subset
+    const currentIndex = sameCategoryPosts.findIndex(
+      (p) => p === post
+    );
+
+    const prevPost = sameCategoryPosts[currentIndex - 1] ?? null;
+    const nextPost = sameCategoryPosts[currentIndex + 1] ?? null;
+
+    return {
+      params: {
+        category: safeCategory,
+        slug: finalSlug,
+      },
+      props: {
+        post,
+        prevPost,
+        nextPost,
+      },
+    };
+  });
+};
+
+const { post, prevPost, nextPost } = Astro.props as Props;
+
+const { default: Content, frontmatter } = post;
+const { category, number, heroTitle, author, enTitle } = frontmatter;
+
+const config = categoryConfig[category];
+
+const kanjiNum = number ? toKanjiDigits(Number(number)) : "";
+
+const fullTitle = config
+  ? `${config.prefix ?? "第"}${kanjiNum}${config.suffix ?? ""}　${heroTitle}`
+  : heroTitle;
+---
+
+<BaseTateBlogLayout 
+  frontmatter={frontmatter}
+  prevPost={prevPost}
+  nextPost={nextPost}
+  category={Astro.params.category}
+>
+  <Content />
+</BaseTateBlogLayout>
