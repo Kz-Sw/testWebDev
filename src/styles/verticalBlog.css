@@ -330,6 +330,58 @@ p {
   vertical-align: -0.02em;
 }
 
+/* ##########################  漢文スタイル############################# */
+/* ── 漢文ブロック ── */
+.kanbun {
+  margin-top: 2rem;
+  display: inline-block;
+  line-height: 2;
+}
+
+/* 各文字のラッパー */
+.kanbun-char {
+  display: inline-block;
+  position: relative;
+  margin-right: 0em; /* 送り仮名のスペース */
+  margin-left: 0em;  /* 返り点のスペース */
+  padding-bottom: 1em; /* 送り仮名のスペースを確保 */
+}
+
+/* 送り仮名：右側・下寄せ */
+.okuri {
+  position: absolute;
+  top: 1.1em;   /* デフォルト1文字用、style上書きで調整 */
+  bottom: auto;
+  right: -0.6em;
+  font-size: 0.45em;
+  font-family: serif;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 返り点：左側・下寄せ */
+.kaeri {
+  position: absolute;
+  bottom: 0;
+  left: -0em;
+  font-size: 0.45em;
+  font-family: serif;
+  line-height: 1;
+}
+
+.kaeri-stacked {
+  letter-spacing: -0.8em;
+}
+
+/* ルビ*/
+ruby {
+  ruby-position: over;
+}
+
+rt {
+  font-size: 0.5em;
+}
+
 /* ##########################  Audio Player ############################# */
 .post-audio {
   margin-inline-start: 2rem;

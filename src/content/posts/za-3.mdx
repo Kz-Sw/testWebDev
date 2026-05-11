@@ -1,6 +1,4 @@
 ---
-layout: ../../layouts/BaseTateBlogLayout.astro
-
 draft: false
 pubDate: 2025-12-20
 number: 003
@@ -100,6 +98,21 @@ customCSS: |
   
 ---
 export const { heroTitle, author } = frontmatter;
+export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" class="inline-icon" />
+export const K = ({ children, kaeri, okuri, len = 1 }) => {
+  const isStacked = kaeri && kaeri.length > 1;
+  return (
+    <span class="kanbun-char">
+      {children}
+      {okuri && (
+        <span class="okuri" style={{ top: `${len * 1.1}em` }}>{okuri}</span>
+      )}
+      {kaeri && (
+        <span class={`kaeri${isStacked ? ' kaeri-stacked' : ''}`}>{kaeri}</span>
+      )}
+    </span>
+  );
+};
 
 
   {/* -- Spacer --*/}
@@ -135,7 +148,7 @@ export const { heroTitle, author } = frontmatter;
 
   <p class="gothic">**2025年度**に期限を迎える赤字国債の発行に必要な特例法について、政府が26年度から5年間の延長を検討していることが24日、分かった。税収だけでは社会保障費などの政策経費を賄えず、財源不足を補うために借金である国債発行が欠かせないためだ。   </p>
 
-  <strong>2025年度に期限を迎える赤字国債の発行に必要な特例法について、政府が26年度から5年間の延長を検討していることが24日、分かった。</strong>税収だけでは社会保障費などの政策経費を賄えず、財源不足を補うために借金である国債発行が欠かせないためだ。
+  <strong>2025年度に期限を迎える<Icon/><Icon/><Icon/>赤字国債の<Icon/>発行に<Icon/>必要な<Icon/>特例法について、政府が26年度から5年間の延長を検討していることが24日、分かった。</strong>税収だけでは社会保障費などの政策経費を賄えず、財源不足を補うために借金である国債発行が欠かせないためだ。
   2025年度に期限を迎える赤字国債の発行に必要な特例法について、政府が26年度から5年間の延長を検討していることが24日、分かった。税収だけでは社会保障費などの政策経費を賄えず、財源不足を補うために借金である国債発行が欠かせないためだ。
 
   <blockquote class="quote">
@@ -143,6 +156,45 @@ export const { heroTitle, author } = frontmatter;
   　交際期間は約2年。両競技のオフにあたる月曜日しか会えない"遠距離恋愛"だったが、来田が球団寮を退寮するタイミングで同棲生活を開始。愛を育んでいる。
   　球界でも指折りのイケメンとして知られていた23歳。心温まる報告に「アスリート婚もいいわね」、「わああああ　すごい」、「来田くん結婚!?　おめでとう!!!」、「おめでとうすぎる」、「あでたいあでたい!」、「えええええ!?!?!　おめでたすぎる」、「うおおおおおおお」、「羨ましいなぁ」とファンも笑顔になっている。
   </blockquote>
+
+  <span class="kanbun">
+    <K>子</K>
+    <K okuri="ハク" len={1}>曰</K>
+    <K okuri="ニシテ" len={5}>十有五</K>
+    <K okuri="ス" len={2} kaeri="二">志</K>
+    <K okuri="ニ" len={2} kaeri="一">学</K>
+
+    <K okuri="ニシテ" len={3}>三十</K>
+    <K >而</K>
+    <K okuri="ツ" len={2}> 立</K>。
+
+    <K okuri="ニシテ" len={3}>四十</K>
+    <K >而</K>
+    <K kaeri="レ" okuri="ハ">不</K>
+    <K okuri="ハ">惑</K>。
+
+    <K okuri="ニシテ" len={3}>五十</K>
+    <K>而</K>
+    <K kaeri="二" okuri="ル">知</K>
+    <K kaeri="一" okuri="ヲ" len={3}>天命</K>。
+
+    <K okuri="ニシテ"len={3}>六十</K>
+    <K>而</K>
+    <K okuri="フ" len={3}>耳順</K>。
+
+    <K okuri="ニシテ" len={3}>七十</K>
+    <K>而</K>
+    <K kaeri="二" okuri="ヒテ">従</K>
+    <K okuri="ノ">心</K>
+    <K kaeri="一レ" okuri="ニ">所</K>
+    <K okuri="スル">欲</K>、
+    <K kaeri="レ" okuri="ト">不</K>
+    <K kaeri="レ" okuri="エ">踰</K>
+    <K okuri="ヲ">矩</K>。
+  </span>
+
+
+
 
   <div class="half-split">
     <div class="half-top">
@@ -199,3 +251,4 @@ export const { heroTitle, author } = frontmatter;
 <p class="note-3">② 佐藤明宏『これからの形』<br /><span class="small">衆議院選挙が27日に公示され、真冬の選挙戦に突入しました。12日間の戦いに向けた各党の“第一声”を分析すると、党首が最も重視する政策が見えてきました。</span></p>
 </div>
 </div>
+
