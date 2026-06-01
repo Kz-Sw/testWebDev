@@ -99,6 +99,10 @@ customCSS: |
 ---
 export const { heroTitle, author } = frontmatter;
 export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" class="inline-icon" />
+export const Rule = ({ len = 5 }) => (
+  <span class="rule" style={{ height: `${len}em` }}></span>
+);
+
 export const K = ({ children, kaeri, okuri, len = 1 }) => {
   const isStacked = kaeri && kaeri.length > 1;
   return (

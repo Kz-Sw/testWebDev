@@ -87,6 +87,16 @@ customCSS: |
     border-radius: 4px;
   }
 
+  .note-0{
+    margin-block-start: 0em;
+  }
+
+  .note-0 strong{
+    font-weight: 900;
+    display: inline-block; /* transform requires block or inline-block */
+    transform: scale(1.3, 0.6);
+  }
+
   .note-1 {
     margin-block-start: 20.5em;
   }
@@ -102,6 +112,33 @@ customCSS: |
 ---
 export const { heroTitle, author } = frontmatter;
 export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" class="inline-icon" />
+export const Rule = ({ len = 5 }) => (
+  <span class="rule" style={{ height: `${len}em` }}></span>
+);
+export const Spacer = ({ len = 5 }) => (
+  <span class="spacer" style={{ width: `${len}em` }}></span>
+);
+
+export const Img = ({ src, alt = "", width = "100%", height = "auto", position = "center center", fit = "cover", margin = "0" }) => (
+  <span class="mdx-img" style={{ width, height, margin }}>
+    <img src={src} alt={alt} style={{ objectFit: fit, objectPosition: position }} />
+  </span>
+);
+
+export const K = ({ children, kaeri, okuri, len = 1 }) => {
+  const isStacked = kaeri && kaeri.length > 1;
+  return (
+    <span class="kanbun-char">
+      {children}
+      {okuri && (
+        <span class="okuri" style={{ top: `${len * 1.1}em` }}>{okuri}</span>
+      )}
+      {kaeri && (
+        <span class={`kaeri${isStacked ? ' kaeri-stacked' : ''}`}>{kaeri}</span>
+      )}
+    </span>
+  );
+};
 
 {/* -- Spacer --*/}
 <div class="content-offset"></div> 
@@ -120,11 +157,11 @@ export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" 
         <Icon />
     </div>
 
-    <p class="indent">この文章を２０２６年の３月に書いている。２月の末にアメリカではエプスタイン文章<span class="note">①</span>なるものが司法省から公になり、世間の<ruby>耳目<rt>じもく</rt></ruby>を集めている。詳細には立ち入らないが、アメリカを始め、ヨーロッパ、中東のエリート階級の信じ難い腐敗が、すでに亡くなっている（と言われている）億万長者、稀代のフィクサー、黒郵便者<span class="note">➁</span>、黒幕、ジェフリー・エプスタインの個人メールやメッセージアプリの履歴から明らかとなった。</p>
+    <p class="indent">この文章を２０２６年の３月に書いている。２月の末にアメリカではエプスタイン文<ruby class="nt">章<rt>（一）</rt></ruby>なるものが司法省から公になり、世間の<ruby>耳目<rt>じもく</rt></ruby>を集めている。詳細には立ち入らないが、アメリカを始め、ヨーロッパ、中東のエリート階級の信じ難い腐敗が、すでに亡くなっている（と言われている）億万長者、稀代のフィクサー、黒郵便<ruby class="nt">者<rt>（二）</rt></ruby>、黒幕、ジェフリー・エプスタインの個人メールやメッセージアプリの履歴から明らかとなった。</p>
 
     <p class="indent">この西洋エリートの腐敗には既視感がある。<Icon />ルイスのこの百ページにも満たないエッセーが出版されたのは１９４３年だ。三四半世紀前の警句にもかかわらず、まるでルイスが危惧した軌道をなぞるように西洋は落ちた。<Icon /></p>
 
-    <p class="indent">ルイスが受け取ったある少年向け英語の教科書はコールリッジ<span class="note">③</span>のある有名なエピソードを紹介する。滝を訪れたコールリッジは旅行者二人の言葉を耳にした。一人は荘厳(sublime)だといい、もう一人はかわいい(pretty)と言う。コールリッジは前者を首肯するのだが、この教科書の著者はこれらの言動は滝についてのものではなく、ただ旅行者の感情なのだという。旅行者の表現は彼らの感覚を表出さてただけのものであって、荘厳な滝というものは存在しないというのだ。つまり、「卑怯な奴だ」と言う時、卑怯な人間は存在せず、ただ、「卑怯な奴だと思う自分の感情」が存在するということになる。価値判断は主観的なものであって、重要でない。このような基準を身体化した子ども達はどのようになってしまうのか。 英語の授業を受けたはずの子どもたちは、イリイチの言う影のプログラム、すなわちテキストの背後に横たわる相対的、唯物的思考をすべての基準とするようになるであろう。</p>
+    <p class="indent">ルイスが受け取ったある少年向け英語の教科書はコールリッ<ruby class="nt">ジ<rt>（三）</rt></ruby>のある有名なエピソードを紹介する。滝を訪れたコールリッジは旅行者二人の言葉を耳にした。一人は荘厳(sublime)だといい、もう一人はかわいい(pretty)と言う。コールリッジは前者を首肯するのだが、この教科書の著者はこれらの言動は滝についてのものではなく、ただ旅行者の感情なのだという。旅行者の表現は彼らの感覚を表出さてただけのものであって、荘厳な滝というものは存在しないというのだ。つまり、「卑怯な奴だ」と言う時、卑怯な人間は存在せず、ただ、「卑怯な奴だと思う自分の感情」が存在するということになる。価値判断は主観的なものであって、重要でない。このような基準を身体化した子ども達はどのようになってしまうのか。 英語の授業を受けたはずの子どもたちは、イリイチの言う影のプログラム、すなわちテキストの背後に横たわる相対的、唯物的思考をすべての基準とするようになるであろう。</p>
 
     <p class="indent">その教科書の第四章ではとあるクルーズ船の広告の謳い文句を題材にする。英語という芸術を扱うのならば、本来ならばこの広告とジョンソン(*4)の「スコットランド西方諸島の旅」を題材にするかもしれない。</p>
 
@@ -163,8 +200,24 @@ export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" 
       </div>
     </div>
     <div class="">
-        第二章 <br />
-        縦書きの未来
+      <div class="chapter">
+        第二章
+      </div>
+      <Img src="/images/posts/za-1_divider.svg" width="5em" height="60vh" fit="contain" margin="1em" />
+      <Spacer len={5} />
+      <blockquote class="quote">
+        <span class="kanbun">
+          <K okuri="ハ" len={4}>君子</K>
+          <K okuri="ム" len={2} kaeri="レ">務</K>
+          <K okuri="ヲ" len={2}>本</K>、
+          <K okuri="チテ" len={3}>本立</K>
+          <K okuri="ズ" len={6}> 而道生</K>。
+          　<Rule len={8} />　<ruby>君子<rt>くんし</rt></ruby>は<ruby>本<rt>もと</rt></ruby>を<ruby>務<rt>つと</rt></ruby>む、<ruby>本立<rt>もとた</rt></ruby>ちて<ruby>道生<rt>みちしょう</rt></ruby>ず。<br/>
+          <Spacer len={3} />
+          　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　孔子
+        </span>
+      </blockquote>
+      <Spacer len={8} />
     </div>
     <p class="indent">
         ここに<span class="small">(小さな注釈テキスト)</span>
@@ -175,6 +228,17 @@ export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" 
 
     <div class="icon-center">
         <img src="/images/posts/post0006/icon0006.png"alt="Icon Center" />
+    </div>
+
+    <p class="indent">
+        ここに<span class="small">(小さな注釈テキスト)</span>
+        を挿入することで、視線のリズムを意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。
+        
+    </p>
+    
+
+    <div class="icon-center">
+        <img src="/images/posts/za-1_divider.png"alt="Icon Center" />
     </div>
 
     {/* -- Audio section --*/}
@@ -196,11 +260,11 @@ export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" 
 
   {/* -- BOTTOM 1/4: BIBLIOGRAPHY / NOTES --*/}
   <div class="bottom vertical">
-    <p class="note-1">① エプスタイン文章<span class="small">(二〇二三年)</span></p>
-
-    <p class="note-2">② 黒郵便　blackmail 相手の弱みを握り、それによって脅迫すること。</p>
-
-    <p class="note-3">② サミュエル・テーラー・コールリッジ<br /><span class="small">（Samuel Taylor Coleridge 一七七二年十月二十一日　一八三四年七月二十五日）</span><br/>はイギリスの詩人、文学批評家、哲学者であり、ウィリアム・ワーズワースと共に英国ロマン主義運動の創設者</p>
+    <Spacer len={20.5} />
+    <p class="note-0"><strong>一</strong><span class="k-t">・</span> エプスタイン文章<span class="small">（二〇二三年）</span></p>
+    <p class="note-0"><strong>二</strong><span class="k-t">・</span> 黒郵便　blackmail 相手の弱みを握り、それによって脅迫すること。</p>
+    <Spacer len={3.5} />
+    <p class="note-0"><strong>八</strong><span class="k-t">・</span> サミュエル・テーラー・コールリッジ<br /><span class="small">（Samuel Taylor Coleridge 一七七二年十月二十一日　一八三四年七月二十五日）</span><br/>はイギリスの詩人、文学批評家、哲学者であり、ウィリアム・ワーズワースと共に英国ロマン主義運動の創設者</p>
   </div>
 
 </div>

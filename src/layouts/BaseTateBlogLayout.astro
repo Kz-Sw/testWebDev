@@ -5,14 +5,17 @@ import Footer from '../components/footer1Blog.astro';
 import '../styles/verticalBlog.css';
 import {toKanjiDigits, slugify} from "../scripts/utils"
 
-const { frontmatter,prevPost, nextPost, category } = Astro.props;
+const { frontmatter,prevPost, nextPost, category} = Astro.props;
 console.log('LAYOUT RECEIVED:', frontmatter);
 const { title, author, enAuthor, heroMedia, heroTitle, enTitle, number, description, customCSS } = frontmatter;
 const fullTitle = number ? `第${toKanjiDigits(number)}座　${heroTitle}` : heroTitle;
 
 const mediaType = heroMedia?.type ?? "image";
 const mediaPosition = heroMedia?.position ?? "center center";
+
 ---
+
+
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -32,7 +35,7 @@ const mediaPosition = heroMedia?.position ?? "center center";
       heroTitle={fullTitle}
       author={author}
     />
-
+    
     <div class="scroll-wrapper">
       <div class="hero-section">
         {heroMedia && heroMedia.type === "image" && (
@@ -64,9 +67,9 @@ const mediaPosition = heroMedia?.position ?? "center center";
         </div>
       </div>
       
-      <slot />
+      <slot/>
     </div>
-    <!-- Everything comes from the .md file -->
+    <!-- Everything comes from the .mdx file -->
 
 
     <Footer 
