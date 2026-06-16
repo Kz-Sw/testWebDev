@@ -17,6 +17,21 @@ heroMedia:
     offsetY: "5%"
     alt: '胸なきヒト'
 
+# Offset block between hero and content.
+#   type: "image"    -> single still (uses url / position)
+#   type: "sequence" -> scroll-driven frames (path + count + pad + ext)
+offsetMedia:
+    type: "sequence"
+    path: "/images/posts/post-1/seq/Text_"
+    count: 60
+    pad: 4
+    ext: "svg"          # rasterized from the heavy .svg line renders
+    reverse: false        # set true to flip play direction
+    fit: "cover"         # cover | contain
+    repeat: 2            # play the sequence N times across the window (2 = double speed + loop)
+    start: 0.3        # window start: 0=just entering, 0.5=screen center, 1=fully exited
+    end: 1               # window end (animation finishes as the block exits the screen)
+
 audio:
   src: /audio/za-1.mp3
 
@@ -87,6 +102,20 @@ customCSS: |
     border-radius: 4px;
   }
 
+  /* Offset SVG sequence: shadow + grow.
+     ONE rule per selector — duplicate selectors override each other per-property,
+     and a black shadow is invisible on the #020202 box, so use a bright color. */
+  .content-offset .seq-img {
+    /* cyan glow that hugs the line art (transparent bg = shadow follows strokes) */
+    filter: drop-shadow(0 0 4px rgba(255, 74, 74, 0.9));
+    transform-origin: center;
+    animation: seqGrow 6s ease-in-out infinite alternate;
+  }
+  @keyframes seqGrow {
+    from { transform: scale(1); }
+    to   { transform: scale(1.12); }
+  }
+
   .note-0{
     margin-block-start: 0em;
   }
@@ -119,8 +148,8 @@ export const Spacer = ({ len = 5 }) => (
   <span class="spacer" style={{ width: `${len}em` }}></span>
 );
 
-export const Img = ({ src, alt = "", width = "100%", height = "auto", position = "center center", fit = "cover", margin = "0" }) => (
-  <span class="mdx-img" style={{ width, height, margin }}>
+export const Img = ({ src, alt = "", width = "100%", height = "auto", position = "center center",   transform = "scale(1.0 1.0)", fit = "cover", margin = "0" }) => (
+  <span class="mdx-img" style={{ width, height, transform, margin }}>
     <img src={src} alt={alt} style={{ objectFit: fit, objectPosition: position }} />
   </span>
 );
@@ -140,9 +169,8 @@ export const K = ({ children, kaeri, okuri, len = 1 }) => {
   );
 };
 
-{/* -- Spacer --*/}
-<div class="content-offset"></div> 
-    
+{/* -- Offset spacer is rendered by the layout from frontmatter.offsetMedia --*/}
+
 {/* -- Content section with top/bottom split --*/}
 <div class="content-section">
   {/* -- TOP 3/4: MAIN TEXT --*/}
@@ -161,7 +189,7 @@ export const K = ({ children, kaeri, okuri, len = 1 }) => {
 
     <p class="indent">この西洋エリートの腐敗には既視感がある。<Icon />ルイスのこの百ページにも満たないエッセーが出版されたのは１９４３年だ。三四半世紀前の警句にもかかわらず、まるでルイスが危惧した軌道をなぞるように西洋は落ちた。<Icon /></p>
 
-    <p class="indent">ルイスが受け取ったある少年向け英語の教科書はコールリッ<ruby class="nt">ジ<rt>（三）</rt></ruby>のある有名なエピソードを紹介する。滝を訪れたコールリッジは旅行者二人の言葉を耳にした。一人は荘厳(sublime)だといい、もう一人はかわいい(pretty)と言う。コールリッジは前者を首肯するのだが、この教科書の著者はこれらの言動は滝についてのものではなく、ただ旅行者の感情なのだという。旅行者の表現は彼らの感覚を表出さてただけのものであって、荘厳な滝というものは存在しないというのだ。つまり、「卑怯な奴だ」と言う時、卑怯な人間は存在せず、ただ、「卑怯な奴だと思う自分の感情」が存在するということになる。価値判断は主観的なものであって、重要でない。このような基準を身体化した子ども達はどのようになってしまうのか。 英語の授業を受けたはずの子どもたちは、イリイチの言う影のプログラム、すなわちテキストの背後に横たわる相対的、唯物的思考をすべての基準とするようになるであろう。</p>
+    <p class="indent">ルイスが受け取ったある少年向け英語の教科書はコールリッ<ruby class="nt">ジ<rt>（三）</rt></ruby>のある有名なエピソードを紹介する。滝を訪れたコールリッジは旅行者二人の言葉を耳にした。一人は荘厳(sublime)だといい、もう一人はかわいい(pretty)と言う。コールリッジは前者を首肯するのだが、この教科書の著者はこれらの言動は滝についてのものではなく、ただ旅行者の感情なのだという。旅行者の表現は彼らの感覚を表出さてただけのものであって、荘厳な滝というものは存在しないというのだ。つまり、「卑怯な奴だ」と言う時、卑怯な人間は存在せず、ただ、「<ruby class="bouten">卑怯な奴だと思う自分の感情<rt>﹅﹅﹅﹅﹅﹅﹅﹅﹅﹅﹅﹅﹅</rt></ruby>」が存在するということになる。価値判断は主観的なものであって、重要でない。このような基準を身体化した子ども達はどのようになってしまうのか。 英語の授業を受けたはずの子どもたちは、イリイチの言う影のプログラム、すなわちテキストの背後に横たわる相対的、唯物的思考をすべての基準とするようになるであろう。</p>
 
     <p class="indent">その教科書の第四章ではとあるクルーズ船の広告の謳い文句を題材にする。英語という芸術を扱うのならば、本来ならばこの広告とジョンソン(*4)の「スコットランド西方諸島の旅」を題材にするかもしれない。</p>
 
@@ -226,19 +254,90 @@ export const K = ({ children, kaeri, okuri, len = 1 }) => {
     </p>
     
 
-    <div class="icon-center">
-        <img src="/images/posts/post0006/icon0006.png"alt="Icon Center" />
-    </div>
+    <Img src="/images/posts/za-1_divider.svg" width="5em" height="60vh" transform = "scale(-1.0,1.0)" fit="contain" margin="1em" />
 
     <p class="indent">
         ここに<span class="small">(小さな注釈テキスト)</span>
         を挿入することで、視線のリズムを意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。意図的に崩すことも可能である。
         
     </p>
-    
 
+      <blockquote class="quote">  
+        <span class="kanbun">
+          <K okuri="ヘテ" len={7}>司馬牛憂</K>
+          <K okuri="ク" len={2}>曰</K>、
+          <K okuri="ハ" len={1}>人</K>皆
+          <K okuri="リ" len={2} kaeri="二">有 </K>
+          <K len={4} kaeri="一">兄弟</K>、
+          我<K okuri="リ" len={2}>獨</K>
+          <K okuri="シ" len={2}>亡</K>。
+
+          <K okuri="ク" len={6}>子夏曰</K>、
+          商<K okuri="ク" len={2} kaeri="レ">聞</K>
+          <K okuri="ヲ" len={2}>之</K>矣、
+          死生<K okuri="リ" len={1} kaeri="レ">有</K>命、
+          富貴<K okuri="リ" len={2} kaeri="レ">在</K>
+          <K okuri="ニ" len={2}>天</K>。
+
+          <K okuri="シテ" len={2}>君子敬</K>
+          <K okuri="ク" len={3}>而無失</K>、
+          <K okuri="リテ" len={3}>與人恭</K>
+          <K okuri="レバ" len={4}>而有禮</K>、
+          四海之內、<K okuri="リ" len={2}>皆兄弟</K>
+          <K okuri="ナリ" len={1}>也</K>。
+
+          君子、<K okuri="ゾ" len={2}>何</K>
+          <K okuri="ン" len={2} kaeri="レ">患</K>
+          <K okuri="キヲ" len={1.5}kaeri="二">無</K>
+          <K len={4} kaeri="一">兄弟</K>乎。
+          
+
+          <br/>
+          <Rule len={36} />
+          <ruby>司馬牛<rt>しばぎゅう</rt></ruby>、
+          <ruby>憂<rt>うれ</rt></ruby>えて
+          <ruby>曰<rt>い</rt></ruby>わく、
+          <ruby>人<rt>ひと</rt></ruby>は
+          <ruby>皆<rt>みな</rt></ruby>
+          <ruby>兄弟<rt>きょうだい</rt></ruby>あり。
+          <ruby>我<rt>われ</rt></ruby>
+          <ruby>獨<rt>ひと</rt></ruby>り
+          <ruby>亡<rt>な</rt></ruby>し。
+
+          <ruby>子夏<rt>しか</rt></ruby>
+          <ruby>曰<rt>い</rt></ruby>わく、
+          <ruby>商<rt>しょう</rt></ruby>
+          <ruby>之<rt>これ</rt></ruby>を
+          <ruby>聞<rt>き</rt></ruby>く、
+          <ruby>死生<rt>しせい</rt></ruby>
+          <ruby>命<rt>めい</rt></ruby>あり、
+          <ruby>富貴<rt>ふうき</rt></ruby>
+          <ruby>天<rt>てん</rt></ruby>に
+          <ruby>在<rt>あ</rt></ruby>り。
+
+          <ruby>君子<rt>くんし</rt></ruby>は
+          <ruby>敬<rt>つつし</rt></ruby>みて
+          <ruby>失<rt>うしな</rt></ruby>うこと無く、
+          <ruby>人<rt>ひと</rt></ruby>と
+          <ruby>與<rt>まじわ</rt></ruby>るに
+          <ruby>恭<rt>うやうや</rt></ruby>しくして
+          <ruby>禮<rt>れい</rt></ruby>あらば、
+          <ruby>四海<rt>しかい</rt></ruby>の
+          <ruby>內<rt>うち</rt></ruby>、
+          <ruby>皆兄弟<rt>みなきょうだい</rt></ruby>なり。
+
+          <ruby>君子<rt>くんし</rt></ruby>、何ぞ
+          <ruby>兄弟<rt>きょうだい</rt></ruby>
+          <ruby>無<rt>な</rt></ruby>きを
+          <ruby>患<rt>うれ</rt></ruby>えんや。
+          <br/>
+
+          <Spacer len={3} />論語　顔淵第十二
+        </span>
+      </blockquote>
+      
     <div class="icon-center">
-        <img src="/images/posts/za-1_divider.png"alt="Icon Center" />
+        <img src="/images/posts/post0006/icon0006.png" alt="Icon Center" />
     </div>
 
     {/* -- Audio section --*/}

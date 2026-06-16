@@ -13,6 +13,10 @@ const fullTitle = number ? `第${toKanjiDigits(number)}座　${heroTitle}` : her
 const mediaType = heroMedia?.type ?? "image";
 const mediaPosition = heroMedia?.position ?? "center center";
 
+// Offset block: "image" | "sequence" (webp/svg/png via `ext`) | absent = empty spacer
+const offsetMedia = frontmatter.offsetMedia;
+const offsetFit = offsetMedia?.fit ?? "cover";
+
 ---
 
 
@@ -66,7 +70,34 @@ const mediaPosition = heroMedia?.position ?? "center center";
           <div class="en-author">{enAuthor}</div>
         </div>
       </div>
-      
+
+      {/* Offset block — driven by frontmatter.offsetMedia (see za-1.mdx) */}
+      {offsetMedia && (
+        <div
+          class="content-offset"
+          data-seq-path={offsetMedia.type === "sequence" ? offsetMedia.path : null}
+          data-seq-count={offsetMedia.type === "sequence" ? String(offsetMedia.count) : null}
+          data-seq-pad={offsetMedia.type === "sequence" ? String(offsetMedia.pad ?? 4) : null}
+          data-seq-ext={offsetMedia.type === "sequence" ? (offsetMedia.ext ?? "webp") : null}
+          data-seq-reverse={offsetMedia.type === "sequence" && offsetMedia.reverse ? "true" : null}
+          data-seq-repeat={offsetMedia.type === "sequence" && offsetMedia.repeat ? String(offsetMedia.repeat) : null}
+          data-seq-start={offsetMedia.type === "sequence" && offsetMedia.start != null ? String(offsetMedia.start) : null}
+          data-seq-end={offsetMedia.type === "sequence" && offsetMedia.end != null ? String(offsetMedia.end) : null}
+        >
+          {offsetMedia.type === "image" && (
+            <img
+              class="offset-img"
+              src={offsetMedia.url}
+              alt={offsetMedia.alt ?? ""}
+              style={`object-fit: ${offsetFit}; object-position: ${offsetMedia.position ?? "center center"};`}
+            />
+          )}
+          {offsetMedia.type === "sequence" && (
+            <img class="seq-img" alt="" style={`object-fit: ${offsetFit};`} />
+          )}
+        </div>
+      )}
+
       <slot/>
     </div>
     <!-- Everything comes from the .mdx file -->
@@ -86,12 +117,91 @@ const mediaPosition = heroMedia?.position ?? "center center";
       window.addEventListener("DOMContentLoaded", () => {
         const scroller = document.querySelector(".scroll-wrapper") as HTMLElement;
         if (!scroller) return;
-        
+
         scroller.scrollLeft = scroller.scrollWidth - scroller.clientWidth;
-        
+
         requestAnimationFrame(() => {
           scroller.style.visibility = "visible";
         });
+      });
+    </script>
+
+    <!-- Scroll-driven image sequence (only runs on posts that opt in) -->
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const scroller = document.querySelector(".scroll-wrapper") as HTMLElement | null;
+        const stage = document.querySelector(".content-offset[data-seq-count]") as HTMLElement | null;
+        const imgEl = stage?.querySelector("img.seq-img") as HTMLImageElement | null;
+        if (!scroller || !stage || !imgEl) return;
+
+        const count = parseInt(stage.dataset.seqCount ?? "0", 10);
+        const path = stage.dataset.seqPath ?? "";
+        const ext = stage.dataset.seqExt ?? "webp";
+        const pad = parseInt(stage.dataset.seqPad ?? "3", 10);
+        const reverse = stage.dataset.seqReverse === "true";
+        // How many times the sequence plays across the active window.
+        const repeat = Math.max(1, parseInt(stage.dataset.seqRepeat ?? "1", 10));
+        // Active scroll window in viewport-travel space:
+        //   0 = block just entering, 0.5 = centered on screen, 1 = fully exited.
+        const start = parseFloat(stage.dataset.seqStart ?? "0");
+        const end = parseFloat(stage.dataset.seqEnd ?? "1");
+        if (count <= 0) return;
+
+        const frameURL = (i: number) =>
+          `${path}${String(i + 1).padStart(pad, "0")}.${ext}`;
+
+        // Preload every frame so swaps come from cache (no flicker).
+        const frames: string[] = [];
+        for (let i = 0; i < count; i++) {
+          const url = frameURL(i);
+          new Image().src = url;
+          frames[i] = url;
+        }
+
+        let current = -1;
+
+        // Raw travel of the block across the viewport, following its actual
+        // motion as you read forward (it enters one edge, crosses, exits the
+        // other):  0 = just entering, 0.5 = centered, 1 = fully exited.
+        const travel = () => {
+          const vw = window.innerWidth || document.documentElement.clientWidth;
+          const r = stage.getBoundingClientRect();
+          const total = vw + r.width;
+          if (total <= 0) return 0;
+          return Math.min(1, Math.max(0, (r.left + r.width) / total));
+        };
+
+        const frameIndex = () => {
+          // Remap travel into the active [start, end] window -> 0..1.
+          const span = end - start || 1;
+          let t = Math.min(1, Math.max(0, (travel() - start) / span));
+          if (reverse) t = 1 - t;
+          // Repeat: play the sequence `repeat` times (sawtooth loop).
+          let phase = (t * repeat) % 1;
+          if (phase === 0 && t > 0) phase = 1; // land on the last frame at each cycle end
+          return Math.min(count - 1, Math.max(0, Math.round(phase * (count - 1))));
+        };
+
+        const render = () => {
+          const idx = frameIndex();
+          if (idx === current) return;
+          imgEl.src = frames[idx];
+          current = idx;
+        };
+
+        let ticking = false;
+        scroller.addEventListener("scroll", () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            render();
+            ticking = false;
+          });
+        }, { passive: true });
+
+        window.addEventListener("resize", () => { current = -1; render(); });
+
+        render();
       });
     </script>
   </body>

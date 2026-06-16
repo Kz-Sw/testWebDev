@@ -108,32 +108,29 @@ img:not([src]), img[src=""] {
 
 /* Spacer between hero and content */
 .content-offset {
-width: 5vw;
+position: relative;
+width: calc(100vh * 2 / 3);
 flex-shrink: 0;
-background:
-  /* LEFT half */
-  linear-gradient(
-    to bottom,
-    #267028 0%,
-    #143420 100%
-  ),
-  /* RIGHT half */
-  linear-gradient(
-    to bottom,
-    #69ca28 0%,
-    #3d7511 100%
-  );
 
-background-size:
-  30% 100%,
-  70% 100%;
+/* solid space behind the image sequence */
+background: #020202;
 
-background-position:
-  left top,
-  right top;
+/* line on the left (reading side for vertical-rl) */
+border-left: 2px solid #676767;
 
-background-repeat: no-repeat;
 pointer-events: none;
+overflow: hidden;
+}
+
+/* Offset media: static image or scroll-driven sequence frame */
+.content-offset .seq-img,
+.content-offset .offset-img {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+object-fit: cover; /* default; overridden inline via offsetMedia.fit */
+display: block;
 }
 
 .content-offset2 {
@@ -170,7 +167,7 @@ background:transparent
 
 /* Bottom (bibliography / notes) */
 .bottom {
-  background: #7a1f1f;
+  background: #363636;
   color: #fff;
   font-size: 0.9em;
   outline: 1px solid rgba(255,255,255,0.15);
@@ -434,6 +431,14 @@ ruby.nt rt {
   text-align: end;
   margin-block-end: -2em;
 }
+
+ruby.bouten rt {
+  zoom: 0.7;   /*傍点﹅ Unicode: U+FE45 /css:content: "\FE45", html:&#xFE45;*/
+  font-family: serif;
+  ruby-position: over;
+  margin-left: 0.2em;
+}
+
 
 /* ##########################  Audio Player ############################# */
 .post-audio {

@@ -96,8 +96,16 @@ function getCategoryName(category: string | undefined): string {
   align-items: center;
   justify-content: flex-start;
   z-index: 999999;
-  transition: opacity 0.2s ease-out; /* Makes the fade feel premium */
+  transition: transform 0.35s ease, opacity 0.35s ease; /* slide + fade */
+  transform: translateX(0);
   opacity: 1;
+}
+
+/* Hidden state: slide off the left edge (reading-forward direction) */
+.simple-vertical-footer.is-hidden {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .nav-logo {
@@ -180,42 +188,50 @@ function getCategoryName(category: string | undefined): string {
 <script is:inline>
   document.addEventListener('DOMContentLoaded', () => {
     const footer = document.querySelector('.simple-vertical-footer');
-    if (!footer) return;
+    const scroller = document.querySelector('.scroll-wrapper');
+    if (!footer || !scroller) return;
 
-    function onScroll() {
-      const scroller = document.querySelector('.scroll-wrapper');
-      if (!scroller) return;
-      
-      const currentScroll = scroller.scrollLeft;
+    // Japanese vertical r-l reading: the reader starts on the right
+    // (scrollLeft = max) and reads forward toward the screen's left,
+    // which makes scrollLeft DECREASE. Reading backward (toward the
+    // right) makes scrollLeft INCREASE.
+    //   forward  (scroll left)  -> hide footer (slide off left edge)
+    //   backward (scroll right) -> show footer (slide back in)
+    let lastScroll = scroller.scrollLeft;
+    // Ignore sub-pixel jitter so a steady read doesn't flicker the footer.
+    const threshold = 5;
+    let ticking = false;
+
+    function update() {
+      const current = scroller.scrollLeft;
+      const delta = current - lastScroll;
+
+      // Always show the footer when the page can't be scrolled.
       const maxScrollLeft = scroller.scrollWidth - scroller.clientWidth;
-      
-      // Define a fixed distance for the fade (e.g., 200px)
-      // This ensures it works even if the blog is short.
-      const fadeDistance = 200; 
-
-      // If the page isn't scrollable at all, keep it visible
       if (maxScrollLeft <= 0) {
-        footer.style.opacity = "1";
-        footer.style.pointerEvents = "auto";
+        footer.classList.remove('is-hidden');
+        lastScroll = current;
+        ticking = false;
         return;
       }
 
-      // Calculate opacity based on fixed pixel distance
-      // 1 at scroll 0, fades to 0 at scroll 200
-      let opacity = 1 - (currentScroll / fadeDistance);
-      
-      // Clamp values between 0 and 1
-      opacity = Math.max(0, Math.min(1, opacity));
+      if (delta < -threshold) {
+        // Scrolling toward the left -> reading forward -> hide.
+        footer.classList.add('is-hidden');
+        lastScroll = current;
+      } else if (delta > threshold) {
+        // Scrolling toward the right -> reading backward -> show.
+        footer.classList.remove('is-hidden');
+        lastScroll = current;
+      }
 
-      footer.style.opacity = opacity;
-      footer.style.pointerEvents = opacity > 0.1 ? 'auto' : 'none';
+      ticking = false;
     }
 
-    const scroller = document.querySelector('.scroll-wrapper');
-    if (scroller) {
-      scroller.addEventListener('scroll', onScroll, { passive: true });
-      // Run once immediately to set initial state
-      onScroll();
-    }
+    scroller.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }, { passive: true });
   });
 </script>
