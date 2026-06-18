@@ -22,7 +22,8 @@ body {
 /* Horizontal scroll container */
 .scroll-wrapper {
   visibility: hidden;
-  height: calc(100vh - var(--header-height)); /* subtract header height */
+  height: calc(100vh - var(--header-height)); /* fallback for browsers without dvh */
+  height: calc(100dvh - var(--header-height)); /* dvh tracks the mobile toolbar so nothing is clipped */
   overflow-x: auto;
   overflow-y: hidden;
   display: flex;
@@ -34,7 +35,9 @@ body {
 /* Hero section - book cover ratio */
 .hero-section {
   height: 100vh;
+  height: 100dvh;
   width: calc(100vh * 2 / 3);
+  width: calc(100dvh * 2 / 3);
   flex-shrink: 0;
   background: #000;
   display: flex;
@@ -112,6 +115,7 @@ img:not([src]), img[src=""] {
 .content-offset {
 position: relative;
 width: calc(100vh * 2 / 3);
+width: calc(100dvh * 2 / 3);
 flex-shrink: 0;
 
 /* solid space behind the image sequence */
@@ -145,7 +149,8 @@ background:transparent
 .content-section {
   display: grid;
   grid-template-rows: 3.1fr 0.9fr;
-  height: calc(100vh - var(--header-height));
+  height: calc(100vh - var(--header-height)); /* fallback for browsers without dvh */
+  height: calc(100dvh - var(--header-height)); /* match .scroll-wrapper so the bottom notes row stays in frame */
   inline-size: fit-content;
 }
 
