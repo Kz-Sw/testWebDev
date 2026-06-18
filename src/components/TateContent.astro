@@ -1,0 +1,12 @@
+---
+// TateContent.astro
+// The top/bottom split for a vertical (縦書き) post, defined once.
+//   default slot -> TOP 3/4 : main text   (.top.vertical)
+//   slot="notes" -> BOTTOM 1/4 : 注釈/書誌 (.bottom.vertical)
+// Used INSIDE the .mdx (not the layout): named slots only resolve for direct
+// children of the component that declares them, and <Content/> declares none.
+---
+<div class="content-section">
+  <div class="top vertical"><slot /></div>
+  <div class="bottom vertical"><slot name="notes" /></div>
+</div>

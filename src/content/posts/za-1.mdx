@@ -139,6 +139,8 @@ customCSS: |
   }
   
 ---
+import TateContent from '../../components/TateContent.astro';
+
 export const { heroTitle, author } = frontmatter;
 export const Icon = () => <img src="/images/posts/post0006/icon0006.png" alt="" class="inline-icon" />
 export const Rule = ({ len = 5 }) => (
@@ -171,14 +173,13 @@ export const K = ({ children, kaeri, okuri, len = 1 }) => {
 
 {/* -- Offset spacer is rendered by the layout from frontmatter.offsetMedia --*/}
 
-{/* -- Content section with top/bottom split --*/}
-<div class="content-section">
-  {/* -- TOP 3/4: MAIN TEXT --*/}
-  <div class="top vertical">
-      <div class="chapter">
-          第一章 <br />
-          縦書きという思想
-      </div>
+{/* TateContent owns the top/bottom split. Main text = default slot;
+    notes = <Fragment slot="notes"> near the bottom of this file. */}
+<TateContent>
+<div class="chapter">
+    第一章 <br />
+    縦書きという思想
+</div>
 
     {/* -- Inserted Icon --*/}
     <div class="icon-center">
@@ -355,15 +356,13 @@ export const K = ({ children, kaeri, okuri, len = 1 }) => {
 
     {/* -- Spacer --*/}
     <div class="content-offset2"></div> 
-  </div>
 
-  {/* -- BOTTOM 1/4: BIBLIOGRAPHY / NOTES --*/}
-  <div class="bottom vertical">
-    <Spacer len={20.5} />
-    <p class="note-0"><strong>一</strong><span class="k-t">・</span> エプスタイン文章<span class="small">（二〇二三年）</span></p>
-    <p class="note-0"><strong>二</strong><span class="k-t">・</span> 黒郵便　blackmail 相手の弱みを握り、それによって脅迫すること。</p>
-    <Spacer len={3.5} />
-    <p class="note-0"><strong>八</strong><span class="k-t">・</span> サミュエル・テーラー・コールリッジ<br /><span class="small">（Samuel Taylor Coleridge 一七七二年十月二十一日　一八三四年七月二十五日）</span><br/>はイギリスの詩人、文学批評家、哲学者であり、ウィリアム・ワーズワースと共に英国ロマン主義運動の創設者</p>
-  </div>
-
-</div>
+{/* -- BOTTOM 1/4: BIBLIOGRAPHY / NOTES → named slot, wrapped by the layout in .bottom.vertical --*/}
+<Fragment slot="notes">
+  <Spacer len={20.5} />
+  <p class="note-0"><strong>一</strong><span class="k-t">・</span> エプスタイン文章<span class="small">（二〇二三年）</span></p>
+  <p class="note-0"><strong>二</strong><span class="k-t">・</span> 黒郵便　blackmail 相手の弱みを握り、それによって脅迫すること。</p>
+  <Spacer len={3.5} />
+  <p class="note-0"><strong>八</strong><span class="k-t">・</span> サミュエル・テーラー・コールリッジ<br /><span class="small">（Samuel Taylor Coleridge 一七七二年十月二十一日　一八三四年七月二十五日）</span><br/>はイギリスの詩人、文学批評家、哲学者であり、ウィリアム・ワーズワースと共に英国ロマン主義運動の創設者</p>
+</Fragment>
+</TateContent>

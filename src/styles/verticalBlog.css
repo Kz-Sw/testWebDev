@@ -148,7 +148,9 @@ background:transparent
 /* Content section with grid */
 .content-section {
   display: grid;
-  grid-template-rows: 3.1fr 0.9fr;
+  /* minmax(0, …) stops the tall .top content from expanding its track past its
+     fraction and shoving the .bottom (notes) row below the overflow cutoff. */
+  grid-template-rows: minmax(0, 3.1fr) minmax(0, 0.9fr);
   height: calc(100vh - var(--header-height)); /* fallback for browsers without dvh */
   height: calc(100dvh - var(--header-height)); /* match .scroll-wrapper so the bottom notes row stays in frame */
   inline-size: fit-content;
@@ -170,6 +172,11 @@ background:transparent
   background: #1e1e1e;
   color: #f2f2f2;
   outline: 1px solid rgba(255,255,255,0.15);
+  /* NOTE: do not set overflow:hidden here. It turns .top into a scroll
+     container, which then no longer forces .content-section (fit-content) to
+     its full width — the column collapses to .bottom's width and .top's tail
+     (the audio section) gets clipped/unreachable. The bottom row is kept in
+     frame by grid-template-rows: minmax(0, …) instead. */
 }
 
 /* Bottom (bibliography / notes) */
