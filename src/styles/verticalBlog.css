@@ -8,8 +8,10 @@
 /* Reset */
 html, body {
   margin: 0;
-  height: 100%;
-  overflow: hidden;
+  /* Allow vertical scroll so the mobile browser's address bar can collapse
+     (like MainLayout). overflow-x stays hidden so the page itself never scrolls
+     sideways — horizontal scrolling lives inside .scroll-wrapper. */
+  overflow-x: hidden;
 }
 
 body {
@@ -71,7 +73,7 @@ img:not([src]), img[src=""] {
   right: 7%;
   transform: none;
   z-index: 10;
-  max-height: 80vh; 
+  max-height: 80vh;
   white-space: nowrap; 
   padding: 1em 0.3em; /* block-padding (top/bottom in vertical), inline-padding (left/right) */
                       /* OR use individual padding */
@@ -143,7 +145,7 @@ background:transparent
 .content-section {
   display: grid;
   grid-template-rows: 3.1fr 0.9fr;
-  height: calc(100vh - var(--header-height)); 
+  height: calc(100vh - var(--header-height));
   inline-size: fit-content;
 }
 
