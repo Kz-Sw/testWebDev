@@ -33,6 +33,7 @@ Consequences that trip people up:
 - [src/styles/verticalBlog.css](src/styles/verticalBlog.css) — shared vertical-layout styles for the long-form reading view (`.content-section`, `.vertical`, `.top`/`.bottom`, 漢文/ruby/media helpers).
 - [src/scripts/categories.ts](src/scripts/categories.ts) — `categoryConfig`: per-category (`za`, `es`, `hs`, `bk`) title prefix/suffix (e.g. 第〇座), decorations, and a data-driven `layout` object that PostCard turns into inline styles. **Add per-category visual tweaks here, not by hardcoding in the component.**
 - Content: `src/content/posts/*.mdx`, routed via [src/pages/[category]/[slug].astro](src/pages/[category]/[slug].astro) and [src/pages/[category].astro](src/pages/[category].astro).
+- Currently only working on 'za-1.mdx' to test the layout itself. All other posts ('za-2.mdx', es-1.mdx' etc) are all placeholders that can be ignored.
 
 ## Conventions
 
